@@ -1,0 +1,5609 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>造价通 AI 询价 Demo</title>
+  <style>
+    :root {
+      --brand: #0b6fe8;
+      --brand-dark: #0759bd;
+      --brand-soft: #eaf3ff;
+      --brand-pale: #f5f9ff;
+      --orange: #ff8a1f;
+      --ink: #18324f;
+      --ink-strong: #102a43;
+      --muted: #667b95;
+      --muted-2: #8998aa;
+      --line: #dbe4ef;
+      --line-strong: #c8d5e4;
+      --paper: #ffffff;
+      --canvas: #f2f6fb;
+      --canvas-2: #eaf0f8;
+      --success: #067647;
+      --success-soft: #e9f8f0;
+      --warning: #b54708;
+      --warning-soft: #fff4e8;
+      --danger: #b42318;
+      --danger-soft: #fff1f0;
+      --shadow: 0 10px 28px rgba(36, 68, 108, 0.10);
+      --shadow-soft: 0 5px 16px rgba(36, 68, 108, 0.07);
+      --radius: 8px;
+      --sidebar: 252px;
+      --composer-width: 836px;
+      --workspace-scrollbar-width: 0px;
+      --conversation-layer-clearance: 284px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: var(--canvas);
+      color: var(--ink);
+      font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+      font-size: 14px;
+      letter-spacing: 0;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    button,
+    a {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.65;
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    textarea:focus-visible,
+    select:focus-visible {
+      outline: 3px solid rgba(11, 111, 232, 0.20);
+      outline-offset: 1px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .view {
+      min-height: 100vh;
+    }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      height: 64px;
+      background: rgba(255, 255, 255, 0.97);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(12px);
+    }
+
+    .site-header-inner {
+      width: min(1440px, 100%);
+      height: 100%;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: grid;
+      grid-template-columns: 200px 1fr auto;
+      align-items: center;
+      gap: 22px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      color: var(--ink-strong);
+      text-decoration: none;
+      font-weight: 800;
+      font-size: 17px;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: var(--brand);
+      color: #fff;
+      font-size: 16px;
+      box-shadow: 0 5px 12px rgba(11, 111, 232, 0.24);
+    }
+
+    .brand-mark::after {
+      content: "";
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.95);
+      position: absolute;
+      transform: translate(10px, -9px);
+    }
+
+    .brand-copy {
+      line-height: 1.05;
+    }
+
+    .brand-copy small {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 500;
+    }
+
+    .main-nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .main-nav a {
+      position: relative;
+      padding: 20px 12px;
+      color: var(--ink);
+      text-decoration: none;
+      font-size: 13px;
+      border-bottom: 2px solid transparent;
+    }
+
+    .main-nav a.active {
+      color: var(--brand);
+      border-color: var(--brand);
+      font-weight: 700;
+    }
+
+    .main-nav .new-tag {
+      position: absolute;
+      top: 6px;
+      right: 5px;
+      padding: 1px 5px;
+      border-radius: 6px 6px 6px 0;
+      background: #f53b57;
+      color: #fff;
+      font-size: 9px;
+      line-height: 16px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .region {
+      color: var(--brand);
+      font-weight: 700;
+    }
+
+    .home-main {
+      width: min(1440px, 100%);
+      margin: 0 auto;
+      padding: 0 24px 36px;
+    }
+
+    .home-banner {
+      position: relative;
+      overflow: hidden;
+      min-height: 270px;
+      margin-top: 18px;
+      padding: 44px 48px 82px;
+      border: 1px solid #d6e5f5;
+      border-radius: 10px;
+      background:
+        linear-gradient(100deg, #f8fbff 0%, #eef7ff 58%, #e6f4ff 100%);
+    }
+
+    .banner-copy {
+      position: relative;
+      z-index: 2;
+      max-width: min(760px, calc(100% - 280px));
+    }
+
+    .tongbao-hero-slot {
+      position: absolute;
+      right: 62px;
+      bottom: 70px;
+      z-index: 1;
+      width: 220px;
+      height: 220px;
+      display: grid;
+      place-items: center;
+    }
+
+    .tongbao-hero-slot::before {
+      content: "";
+      position: absolute;
+      inset: 28px 14px 12px;
+      border-radius: 50%;
+      background: #d7ebff;
+      border: 1px solid #bfdcf8;
+    }
+
+    .tongbao-hero-image {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 14px 18px rgba(26, 91, 159, 0.15));
+    }
+
+    .tongbao-hero-label {
+      position: absolute;
+      right: 24px;
+      bottom: 14px;
+      z-index: 2;
+      padding: 4px 9px;
+      border: 1px solid #bddaf7;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.94);
+      color: var(--brand);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .banner-kicker {
+      margin-bottom: 12px;
+      color: var(--brand);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .banner-title {
+      margin: 0;
+      color: var(--ink-strong);
+      font-size: 38px;
+      line-height: 1.23;
+      font-weight: 800;
+    }
+
+    .banner-title strong {
+      color: var(--brand);
+    }
+
+    .banner-subtitle {
+      margin: 14px 0 0;
+      color: #49637d;
+      font-size: 16px;
+      line-height: 1.7;
+    }
+
+    .banner-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 20px;
+    }
+
+    .banner-pills span {
+      padding: 6px 11px;
+      border: 1px solid #cbdcf0;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.72);
+      color: #516a84;
+      font-size: 12px;
+    }
+
+    .search-workbench {
+      position: relative;
+      z-index: 3;
+      width: min(1050px, calc(100% - 48px));
+      margin: -54px auto 0;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .search-row {
+      display: grid;
+      grid-template-columns: 150px minmax(220px, 1fr) 96px 112px 124px;
+      gap: 10px;
+    }
+
+    .select-control,
+    .text-control {
+      min-width: 0;
+      height: 44px;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      padding: 0 13px;
+    }
+
+    .select-control {
+      font-weight: 700;
+    }
+
+    .primary-btn,
+    .secondary-btn,
+    .ghost-btn,
+    .icon-btn,
+    .nav-btn {
+      border: 1px solid transparent;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 38px;
+      padding: 0 14px;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+
+    .primary-btn {
+      background: var(--brand);
+      color: #fff;
+      border-color: var(--brand);
+      font-weight: 700;
+    }
+
+    .primary-btn:hover {
+      background: var(--brand-dark);
+      border-color: var(--brand-dark);
+    }
+
+    .secondary-btn {
+      background: #fff;
+      color: var(--brand);
+      border-color: #a8cdf7;
+      font-weight: 700;
+    }
+
+    .secondary-btn:hover {
+      background: var(--brand-soft);
+    }
+
+    .ghost-btn {
+      background: #fff;
+      color: var(--ink);
+      border-color: var(--line);
+    }
+
+    .ghost-btn:hover {
+      border-color: #aac8e8;
+      background: var(--brand-pale);
+    }
+
+    .icon-btn {
+      width: 38px;
+      min-width: 38px;
+      padding: 0;
+      background: transparent;
+      color: var(--muted);
+      border-color: transparent;
+    }
+
+    .icon-btn:hover {
+      background: var(--brand-pale);
+      color: var(--brand);
+    }
+
+    .search-workbench .ai-entry {
+      min-height: 44px;
+      position: relative;
+    }
+
+    .tongbao-entry-avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      object-fit: contain;
+      background: #f4f9ff;
+      border: 1px solid #d5e7fa;
+    }
+
+    .search-workbench .ai-entry::after {
+      content: "Beta";
+      position: absolute;
+      top: -8px;
+      right: 8px;
+      padding: 1px 5px;
+      border-radius: 6px 6px 6px 0;
+      background: #f53b57;
+      color: #fff;
+      font-size: 9px;
+      line-height: 16px;
+    }
+
+    .category-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid #edf1f6;
+    }
+
+    .category-row button {
+      height: 34px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: #516a84;
+    }
+
+    .category-row button:hover {
+      border-color: #9dc5f3;
+      color: var(--brand);
+      background: var(--brand-pale);
+    }
+
+    .home-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(310px, 0.8fr);
+      gap: 18px;
+      margin-top: 22px;
+    }
+
+    .section-panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .section-panel-header {
+      height: 52px;
+      padding: 0 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid #edf1f6;
+    }
+
+    .section-panel-header h2 {
+      margin: 0;
+      color: var(--ink-strong);
+      font-size: 16px;
+    }
+
+    .section-panel-header a {
+      color: var(--muted);
+      font-size: 12px;
+      text-decoration: none;
+    }
+
+    .prediction-body {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      min-height: 306px;
+    }
+
+    .prediction-tabs {
+      padding: 15px 0;
+      border-right: 1px solid #edf1f6;
+      background: #f8fafc;
+    }
+
+    .prediction-tabs button {
+      width: 100%;
+      height: 43px;
+      padding: 0 18px;
+      border: 0;
+      border-left: 3px solid transparent;
+      background: transparent;
+      color: #536b85;
+      text-align: left;
+    }
+
+    .prediction-tabs button.active {
+      border-left-color: var(--brand);
+      background: #fff;
+      color: var(--brand);
+      font-weight: 700;
+    }
+
+    .prediction-content {
+      padding: 20px 22px;
+      min-width: 0;
+    }
+
+    .prediction-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 16px;
+    }
+
+    .prediction-label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .prediction-price {
+      margin-top: 5px;
+      color: #ff6b1a;
+      font-size: 30px;
+      font-weight: 800;
+    }
+
+    .prediction-price small {
+      margin-left: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .prediction-meta {
+      margin-top: 7px;
+      color: #536b85;
+      font-size: 12px;
+    }
+
+    .legend {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .legend span {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .legend i {
+      width: 16px;
+      height: 3px;
+      border-radius: 2px;
+      background: var(--brand);
+    }
+
+    .legend i.orange {
+      background: #20b26b;
+    }
+
+    .chart {
+      position: relative;
+      height: 205px;
+      border-radius: 7px;
+      background:
+        linear-gradient(to right, rgba(133, 155, 179, 0.18) 1px, transparent 1px) 0 0 / 25% 100%,
+        linear-gradient(to bottom, rgba(133, 155, 179, 0.18) 1px, transparent 1px) 0 0 / 100% 25%,
+        #fbfdff;
+      overflow: hidden;
+    }
+
+    .chart .future {
+      position: absolute;
+      inset: 0 0 0 64%;
+      background: rgba(32, 178, 107, 0.08);
+    }
+
+    .chart svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .latest-list {
+      padding: 8px 18px 14px;
+    }
+
+    .latest-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      padding: 13px 0;
+      border-bottom: 1px solid #edf1f6;
+      color: #506781;
+      font-size: 12px;
+    }
+
+    .latest-item:last-child {
+      border-bottom: 0;
+    }
+
+    .latest-item strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .workspace-view {
+      display: grid;
+      grid-template-columns: var(--sidebar) minmax(0, 1fr);
+      height: 100vh;
+      min-height: 0;
+      background: var(--canvas);
+      overflow: hidden;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      min-height: 640px;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--line);
+      background: #f8fbff;
+    }
+
+    .sidebar-brand {
+      height: 70px;
+      padding: 0 18px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      border-bottom: 1px solid #e4ecf5;
+      color: #155fd1;
+      font-size: 18px;
+      font-style: italic;
+      font-weight: 800;
+    }
+
+    .sidebar-brand .ai-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: #eef6ff;
+      color: var(--brand);
+      font-style: normal;
+      font-size: 13px;
+      border: 1px solid #cfe3fb;
+      overflow: hidden;
+    }
+
+    .sidebar-brand .ai-mark img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #f6fbff;
+    }
+
+    .beta-badge {
+      padding: 1px 4px;
+      border-radius: 5px 5px 5px 0;
+      background: #f53b57;
+      color: #fff;
+      font-size: 9px;
+      line-height: 15px;
+      font-style: normal;
+      vertical-align: top;
+    }
+
+    .sidebar-content {
+      flex: 1;
+      min-height: 0;
+      padding: 14px 12px;
+      overflow-y: auto;
+    }
+
+    .new-chat {
+      width: 100%;
+      justify-content: flex-start;
+      height: 42px;
+    }
+
+    .sidebar-section-label {
+      margin: 22px 10px 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .history-list {
+      display: grid;
+      gap: 5px;
+    }
+
+    .history-item {
+      width: 100%;
+      min-height: 38px;
+      padding: 0 10px;
+      display: grid;
+      grid-template-columns: 20px 1fr 20px;
+      align-items: center;
+      gap: 7px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: #49637e;
+      text-align: left;
+    }
+
+    .history-item span:nth-child(2) {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .history-item:hover,
+    .history-item.active {
+      background: #e7f1ff;
+      color: var(--brand);
+    }
+
+    .sidebar-bottom {
+      padding: 14px;
+      border-top: 1px solid #e4ecf5;
+      background: #fff;
+    }
+
+    .quota {
+      margin-bottom: 12px;
+      padding: 12px;
+      border: 1px solid #dce8f6;
+      border-radius: 8px;
+      background: #f8fbff;
+      color: #526b85;
+      font-size: 12px;
+      line-height: 1.65;
+    }
+
+    .quota strong {
+      color: var(--brand);
+      font-size: 16px;
+    }
+
+    .quota-rule {
+      margin-top: 7px;
+      padding-top: 7px;
+      border-top: 1px dashed #cedced;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .user-line {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: #fff1c9;
+      color: #b34a14;
+      font-weight: 800;
+    }
+
+    .workspace-main {
+      min-width: 0;
+      height: 100vh;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .workspace-view.workspace-empty .toolbar-status,
+    .workspace-view.workspace-empty .toolbar-hint {
+      display: none;
+    }
+
+    .workspace-toolbar {
+      height: 60px;
+      padding: 0 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.96);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    .toolbar-left,
+    .toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .toolbar-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--ink-strong);
+    }
+
+    .toolbar-status {
+      padding: 4px 8px;
+      border: 1px solid #c9e0fb;
+      border-radius: 6px;
+      background: var(--brand-soft);
+      color: var(--brand);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .toolbar-hint {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .screen {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
+      scrollbar-color: #b8c5d6 #f2f6fb;
+    }
+
+    #chatScreen {
+      flex: 0 0 auto;
+      height: calc(100% - var(--conversation-layer-clearance));
+    }
+
+    .screen::-webkit-scrollbar {
+      width: 12px;
+      height: 0;
+    }
+
+    .screen::-webkit-scrollbar-track {
+      border-left: 1px solid #e1e8f1;
+      background: #f4f7fb;
+    }
+
+    .screen::-webkit-scrollbar-thumb {
+      min-height: 56px;
+      border: 3px solid #f4f7fb;
+      border-radius: 999px;
+      background: #b8c5d6;
+    }
+
+    .screen::-webkit-scrollbar-thumb:hover {
+      background: #94a6ba;
+    }
+
+    .chat-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      width: 100%;
+      margin: 0;
+      padding: 20px 0 96px;
+    }
+
+    .conversation {
+      min-width: 0;
+      width: min(var(--composer-width), calc(100% - 44px));
+      margin-left: max(22px, calc((100% - var(--composer-width) + var(--workspace-scrollbar-width)) / 2));
+    }
+
+    .privacy-note {
+      margin-bottom: 16px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .privacy-note button {
+      margin-left: 8px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--brand);
+    }
+
+    .user-message {
+      width: fit-content;
+      max-width: min(680px, 88%);
+      margin-left: auto;
+      padding: 12px 16px;
+      border: 1px solid #c7ddf8;
+      border-radius: 9px 9px 2px 9px;
+      background: #e7f1ff;
+      color: #274563;
+      line-height: 1.65;
+    }
+
+    .ai-message {
+      margin-top: 20px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .ai-message-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 11px;
+      margin-bottom: 15px;
+    }
+
+    .ai-avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: #f4f9ff;
+      color: var(--brand);
+      flex: 0 0 auto;
+      border: 1px solid #d5e7fa;
+      overflow: hidden;
+    }
+
+    .ai-avatar img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #f8fcff;
+    }
+
+    .ai-message-title {
+      margin: 1px 0 4px;
+      color: var(--ink-strong);
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .ai-message-subtitle {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .result-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    .result-summary h3 {
+      margin: 0;
+      color: var(--ink-strong);
+      font-size: 17px;
+    }
+
+    .result-summary p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      min-width: 920px;
+      border-collapse: collapse;
+      background: #fff;
+    }
+
+    th,
+    td {
+      padding: 11px 12px;
+      border-right: 1px solid #e5ebf3;
+      border-bottom: 1px solid #e5ebf3;
+      vertical-align: middle;
+      text-align: left;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    th:last-child,
+    td:last-child {
+      border-right: 0;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    thead th {
+      background: #edf5ff;
+      color: #27496b;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    tbody tr:hover {
+      background: #f8fbff;
+    }
+
+    .price-value {
+      color: #e55a13;
+      font-size: 14px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .supplier-name {
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .result-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 16px;
+    }
+
+    .result-feedback-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 12px;
+    }
+
+    .result-feedback-btn {
+      display: inline-grid;
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      place-items: center;
+      border: 1px solid transparent;
+      border-radius: 5px;
+      background: transparent;
+      color: #718397;
+      cursor: pointer;
+      transition: color 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+    }
+
+    .result-feedback-btn svg {
+      width: 17px;
+      height: 17px;
+    }
+
+    .result-feedback-btn:hover,
+    .result-feedback-btn:focus-visible {
+      border-color: #c7ddf8;
+      background: #f3f8ff;
+      color: var(--brand);
+      outline: none;
+    }
+
+    .result-feedback-btn.is-active {
+      border-color: #b8d5f5;
+      background: #e8f2ff;
+      color: #1f4f7a;
+    }
+
+    .result-feedback-btn[data-tooltip] {
+      position: relative;
+    }
+
+    .result-feedback-btn[data-tooltip]::after {
+      position: absolute;
+      z-index: 8;
+      left: 50%;
+      top: calc(100% + 8px);
+      width: max-content;
+      max-width: min(420px, calc(100vw - 40px));
+      padding: 9px 12px;
+      border-radius: 5px;
+      background: #35383d;
+      color: #fff;
+      content: attr(data-tooltip);
+      font-size: 13px;
+      font-weight: 400;
+      line-height: 1.45;
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, -4px);
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      white-space: normal;
+    }
+
+    .result-feedback-btn[data-tooltip]::before {
+      position: absolute;
+      z-index: 9;
+      left: 50%;
+      top: calc(100% + 3px);
+      width: 10px;
+      height: 10px;
+      background: #35383d;
+      content: "";
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(-50%) rotate(45deg);
+      transition: opacity 0.18s ease;
+    }
+
+    .result-feedback-btn[data-tooltip]:hover::after,
+    .result-feedback-btn[data-tooltip]:hover::before,
+    .result-feedback-btn[data-tooltip]:focus-visible::after,
+    .result-feedback-btn[data-tooltip]:focus-visible::before {
+      opacity: 1;
+    }
+
+    .result-feedback-btn[data-tooltip]:hover::after,
+    .result-feedback-btn[data-tooltip]:focus-visible::after {
+      transform: translate(-50%, 0);
+    }
+
+    .result-manual-hint {
+      margin: 14px 0 0;
+      padding-top: 12px;
+      border-top: 1px dashed #dbe4ef;
+      color: #536b85;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .result-manual-link {
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--brand);
+      font-weight: 700;
+    }
+
+    .result-manual-link:hover {
+      text-decoration: underline;
+    }
+
+    .composer-shell {
+      position: fixed;
+      z-index: 25;
+      left: calc(var(--sidebar) + max(22px, (100vw - var(--sidebar) - var(--composer-width)) / 2));
+      right: auto;
+      width: min(var(--composer-width), calc(100vw - var(--sidebar) - 44px));
+      bottom: 14px;
+      max-width: none;
+    }
+
+    .composer-shortcuts {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 44px;
+      margin-bottom: 8px;
+      padding: 0 176px 0 2px;
+      overflow: hidden;
+    }
+
+    .composer-mode {
+      height: 36px;
+      min-height: 36px;
+      padding: 0 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex: 0 0 auto;
+      border: 1px solid #cfdeed;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.96);
+      color: #506981;
+      box-shadow: 0 4px 12px rgba(34, 72, 112, 0.06);
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .composer-mode:hover {
+      border-color: #9dc8f5;
+      color: var(--brand);
+    }
+
+    .composer-mode.active {
+      border-color: #17324d;
+      background: #17324d;
+      color: #fff;
+      box-shadow: 0 5px 14px rgba(23, 50, 77, 0.18);
+    }
+
+    .composer-mode svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    .composer-stage {
+      position: relative;
+    }
+
+    .composer {
+      position: relative;
+      border: 1px solid #8ebdf4;
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: 0 12px 34px rgba(31, 77, 129, 0.16);
+      overflow: visible;
+    }
+
+    .tongbao-composer-pet {
+      position: absolute;
+      top: -106px;
+      right: 10px;
+      z-index: 3;
+      width: 156px;
+      height: 108px;
+      overflow: visible;
+      pointer-events: none;
+    }
+
+    .tongbao-composer-pet > img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center bottom;
+      filter: drop-shadow(0 5px 7px rgba(24, 75, 132, 0.16));
+      transform: translateY(1px);
+      transform-origin: center bottom;
+    }
+
+    .tongbao-composer-bubble {
+      position: absolute;
+      right: calc(100% + 14px);
+      bottom: 16px;
+      width: max-content;
+      max-width: 320px;
+      padding: 9px 12px;
+      border: 1px solid #c9dff7;
+      border-radius: 12px 12px 3px 12px;
+      background: rgba(255, 255, 255, 0.98);
+      box-shadow: 0 8px 20px rgba(31, 77, 129, 0.12);
+      color: #35536f;
+      font-size: 12px;
+      line-height: 1.55;
+      text-align: left;
+      white-space: normal;
+      transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
+    }
+
+    .tongbao-composer-bubble::after {
+      content: "";
+      position: absolute;
+      right: -5px;
+      bottom: 12px;
+      width: 9px;
+      height: 9px;
+      border-top: 1px solid #c9dff7;
+      border-right: 1px solid #c9dff7;
+      background: inherit;
+      transform: rotate(45deg);
+    }
+
+    .tongbao-composer-bubble[data-tone="success"] {
+      border-color: #b8e6ce;
+      background: #f4fcf7;
+    }
+
+    .tongbao-composer-bubble[data-tone="warning"] {
+      border-color: #efd2ae;
+      background: #fffaf4;
+    }
+
+    .tongbao-composer-bubble.is-updating {
+      animation: tongbao-bubble-pop 0.22s ease-out;
+    }
+
+    .tongbao-composer-bubble.is-hidden {
+      visibility: hidden;
+      opacity: 0;
+      transform: translateY(4px);
+    }
+
+    @keyframes tongbao-bubble-pop {
+      from {
+        opacity: 0.55;
+        transform: translateY(3px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .composer-shell.editing .composer {
+      border-color: #4c9af1;
+      box-shadow: 0 12px 34px rgba(31, 77, 129, 0.16), 0 0 0 3px rgba(11, 111, 232, 0.10);
+    }
+
+    .composer-edit-hint {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 9px 10px 0;
+      padding: 6px 9px;
+      border-radius: 6px;
+      background: var(--brand-soft);
+      color: var(--brand);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .composer-mode-chip {
+      width: fit-content;
+      margin: 10px 12px 0;
+      padding: 4px 4px 4px 9px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid #c9dff7;
+      border-radius: 6px;
+      background: #eaf3ff;
+      color: #155fa8;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .composer-mode-chip svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .composer-mode-chip button {
+      width: 20px;
+      height: 20px;
+      padding: 0;
+      display: grid;
+      place-items: center;
+      border: 0;
+      border-radius: 4px;
+      background: transparent;
+      color: #51779e;
+    }
+
+    .composer-mode-chip button:hover {
+      background: #d6e8fb;
+      color: #174f85;
+    }
+
+    .composer-mode-chip button svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    .composer:has(.composer-mode-chip:not(.hidden)) textarea {
+      min-height: 72px;
+      padding-top: 8px;
+    }
+
+    .composer textarea {
+      display: block;
+      width: 100%;
+      min-height: 106px;
+      max-height: 150px;
+      resize: none;
+      border: 0;
+      outline: 0;
+      padding: 15px 16px 8px;
+      color: var(--ink);
+      background: transparent;
+      line-height: 1.55;
+    }
+
+    .composer-bottom {
+      min-height: 52px;
+      padding: 0 10px 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .composer-reasoning {
+      min-height: 34px;
+      padding: 0 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      border: 1px solid #dce6f2;
+      border-radius: 6px;
+      background: #f8fbff;
+      color: #27384d;
+      font-size: 13px;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    .composer-reasoning:hover {
+      border-color: #b8d4f2;
+      background: #f3f8ff;
+    }
+
+    .composer-reasoning > svg:first-child {
+      width: 15px;
+      height: 15px;
+      color: var(--brand);
+    }
+
+    .composer-reasoning > svg:last-child {
+      width: 14px;
+      height: 14px;
+      margin-left: 1px;
+      color: #7d8b9d;
+    }
+
+    .composer-reasoning em {
+      margin-left: 4px;
+      color: #ff4d4f;
+      font-size: 11px;
+      font-style: normal;
+      font-weight: 750;
+    }
+
+    .composer-reasoning-wrap {
+      position: relative;
+    }
+
+    .reasoning-mode-menu {
+      position: absolute;
+      left: 0;
+      bottom: calc(100% + 7px);
+      z-index: 60;
+      width: 272px;
+      padding: 6px;
+      border: 1px solid #dbe5f0;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 14px 32px rgba(29, 66, 107, 0.16);
+    }
+
+    .reasoning-mode-option {
+      position: relative;
+      width: 100%;
+      min-height: 54px;
+      padding: 8px 30px 8px 9px;
+      display: grid;
+      grid-template-columns: 30px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: #30445a;
+      text-align: left;
+    }
+
+    .reasoning-mode-option:hover {
+      background: #f4f8fd;
+    }
+
+    .reasoning-mode-option.active {
+      background: #edf5ff;
+      color: #155fae;
+    }
+
+    .reasoning-mode-option > svg:first-child {
+      width: 18px;
+      height: 18px;
+      justify-self: center;
+    }
+
+    .reasoning-mode-option-copy {
+      min-width: 0;
+    }
+
+    .reasoning-mode-option-copy strong {
+      display: block;
+      margin-bottom: 3px;
+      font-size: 13px;
+    }
+
+    .reasoning-mode-option-copy small {
+      display: block;
+      color: #7e8b99;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .reasoning-mode-option em {
+      color: #ff4d4f;
+      font-size: 10px;
+      font-style: normal;
+      font-weight: 750;
+    }
+
+    .reasoning-mode-check {
+      position: absolute;
+      right: 9px;
+      top: 50%;
+      width: 15px;
+      height: 15px;
+      color: var(--brand);
+      opacity: 0;
+      transform: translateY(-50%);
+    }
+
+    .reasoning-mode-option.active .reasoning-mode-check {
+      opacity: 1;
+    }
+
+    .composer-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: #1267d5;
+      font-size: 18px;
+      font-style: italic;
+      font-weight: 800;
+    }
+
+    .composer-brand-avatar {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 1px solid #d5e7fa;
+      background: #f6fbff;
+    }
+
+    .composer-brand-avatar img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .composer-tools {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .composer-tools .icon-btn {
+      width: 36px;
+      min-width: 36px;
+      height: 36px;
+      min-height: 36px;
+      border-color: #e0e6ee;
+      border-radius: 7px;
+      background: #fff;
+      color: #718096;
+    }
+
+    .composer-tools .icon-btn:hover {
+      border-color: #b7d4f3;
+      background: #f5f9ff;
+      color: var(--brand);
+    }
+
+    .composer-tools .icon-btn svg {
+      width: 17px;
+      height: 17px;
+    }
+
+    .composer-symbol-btn {
+      color: #8b95a5 !important;
+      font-size: 14px;
+      font-weight: 650;
+    }
+
+    .composer-mic-btn {
+      border-color: transparent !important;
+      background: transparent !important;
+      color: var(--brand) !important;
+    }
+
+    .composer-mic-btn:hover {
+      background: var(--brand-soft) !important;
+    }
+
+    .send-btn {
+      width: 42px;
+      height: 42px;
+      min-width: 42px;
+      padding: 0;
+      border-radius: 50%;
+      background: var(--brand);
+      color: #fff;
+      border: 1px solid var(--brand);
+    }
+
+    .send-btn:hover {
+      background: var(--brand-dark);
+    }
+
+    .empty-chat {
+      min-height: 420px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      color: var(--muted);
+    }
+
+    .empty-chat-copy {
+      width: 100%;
+      text-align: center;
+    }
+
+    .empty-chat h1 {
+      margin: 0;
+      color: #63aaf4;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 56px;
+      font-weight: 700;
+      line-height: 1.06;
+      letter-spacing: 0;
+    }
+
+    .empty-chat p {
+      margin: 17px 0 0;
+      color: #17324f;
+      font-size: 17px;
+      line-height: 1.6;
+    }
+
+    .loading-box {
+      display: grid;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .first-submit-stage {
+      min-height: 356px;
+      margin-top: 16px;
+      padding: 22px 24px 20px;
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      border: 1px solid #dce6f2;
+      border-radius: 8px;
+      background: #fff;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    .first-submit-icon {
+      width: 178px;
+      height: 154px;
+      margin: 0 auto 2px;
+      display: grid;
+      place-items: center;
+      overflow: visible;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      animation: first-submit-icon-in 0.42s ease-out both;
+    }
+
+    .first-submit-icon img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 58%;
+      mix-blend-mode: multiply;
+      transform-origin: center 78%;
+      animation: tongbao-thinking 1.8s ease-in-out infinite;
+    }
+
+    .first-submit-stage h3 {
+      margin: 8px 0 7px;
+      color: var(--ink-strong);
+      font-size: 20px;
+      line-height: 1.35;
+    }
+
+    .first-submit-content {
+      width: 100%;
+      display: grid;
+      justify-items: center;
+    }
+
+    .first-submit-content > p {
+      max-width: 500px;
+      margin: 0;
+      color: #6b7d91;
+      line-height: 1.6;
+    }
+
+    .first-submit-thinking-dots {
+      display: inline-block;
+      width: 18px;
+      overflow: hidden;
+      vertical-align: bottom;
+      text-align: left;
+      animation: first-submit-thinking-dots 1.2s steps(4, end) infinite;
+    }
+
+    .first-submit-progress {
+      width: min(430px, 82%);
+      height: 6px;
+      margin-top: 20px;
+      border-radius: 999px;
+      background: #e8eef6;
+      overflow: hidden;
+    }
+
+    .first-submit-progress span {
+      display: block;
+      width: 7%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #7857ff, #3f8cff);
+      animation: first-submit-progress 1.65s cubic-bezier(0.25, 0.1, 0.2, 1) forwards;
+    }
+
+    .first-submit-process {
+      width: min(500px, 88%);
+      margin-top: 4px;
+      text-align: left;
+    }
+
+    .first-submit-process-heading {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #768596;
+      font-size: 14px;
+      font-weight: 650;
+    }
+
+    .first-submit-process-heading::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border: 2px solid #9cc3ef;
+      border-top-color: var(--brand);
+      border-radius: 50%;
+      animation: first-submit-process-spin 0.8s linear infinite;
+    }
+
+    .first-submit-process-status {
+      margin: 12px 0 10px;
+      color: #405a75;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .first-submit-process-steps {
+      display: grid;
+      gap: 8px;
+    }
+
+    .first-submit-process-step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #a0a9b3;
+      font-size: 13px;
+      transition: color 0.2s ease, opacity 0.2s ease;
+    }
+
+    .first-submit-process-step::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      background: #d1d7de;
+    }
+
+    .first-submit-process-step.is-active {
+      color: #2f526f;
+      font-weight: 650;
+    }
+
+    .first-submit-process-step.is-active::before {
+      background: var(--brand);
+      box-shadow: 0 0 0 4px rgba(11, 111, 232, 0.10);
+    }
+
+    .first-submit-process-step.is-done {
+      color: #728394;
+    }
+
+    .first-submit-process-step.is-done::before {
+      background: #5fae87;
+    }
+
+    @keyframes first-submit-progress {
+      0% {
+        width: 7%;
+      }
+      70% {
+        width: 82%;
+      }
+      100% {
+        width: 100%;
+      }
+    }
+
+    @keyframes first-submit-icon-in {
+      from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.97);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes tongbao-thinking {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      35% {
+        transform: translateY(-5px) rotate(-1.2deg);
+      }
+      65% {
+        transform: translateY(-7px) rotate(1deg);
+      }
+    }
+
+    @keyframes first-submit-thinking-dots {
+      0% { clip-path: inset(0 100% 0 0); }
+      100% { clip-path: inset(0 0 0 0); }
+    }
+
+    @keyframes first-submit-process-spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .first-submit-icon,
+      .first-submit-icon img,
+      .first-submit-thinking-dots,
+      .first-submit-progress span,
+      .first-submit-process-heading::before {
+        animation: none;
+      }
+    }
+
+    .agent-turn {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .agent-turn-bubble {
+      max-width: min(760px, calc(100% - 40px));
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 2px 8px 8px 8px;
+      background: #fff;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .agent-turn-bubble strong {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--ink-strong);
+      font-size: 13px;
+    }
+
+    .agent-turn-bubble p {
+      margin: 0;
+      color: #526b85;
+      line-height: 1.65;
+    }
+
+    .supplier-contact-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .supplier-contact-item {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 10px;
+      border: 1px solid #e1eaf4;
+      border-radius: 5px;
+      background: #f8fbff;
+      color: #405a75;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .supplier-contact-item strong {
+      margin: 0;
+      color: #27496b;
+      font-size: 12px;
+    }
+
+    .supplier-contact-phone {
+      flex: 0 0 auto;
+      color: var(--brand);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .supplier-contact-manual-btn {
+      margin-top: 11px;
+    }
+
+    .inquiry-reasoning-turn {
+      margin-top: 12px;
+    }
+
+    .inquiry-reasoning-bubble {
+      width: min(590px, calc(100% - 40px));
+      padding: 7px 0 2px;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .inquiry-reasoning-turn .first-submit-process {
+      width: 100%;
+      margin-top: 0;
+    }
+
+    .no-data-message {
+      border-color: #f1d0cc;
+    }
+
+    .incomplete-spec-message {
+      border-color: #f0d6a8;
+    }
+
+    .incomplete-spec-message .no-data-panel {
+      border-color: #f2d39f;
+      background: #fffbf3;
+    }
+
+    .incomplete-spec-message .no-data-icon {
+      background: #fff0d8;
+      color: var(--warning);
+    }
+
+    .inquiry-choice-panel {
+      margin-top: 14px;
+      overflow: hidden;
+      border: 1px solid #d9e2ed;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 6px 18px rgba(33, 69, 108, 0.06);
+    }
+
+    .inquiry-choice-head {
+      min-height: 48px;
+      padding: 0 12px 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      border-bottom: 1px solid #e5ebf2;
+    }
+
+    .inquiry-choice-head strong {
+      color: #283747;
+      font-size: 14px;
+    }
+
+    .inquiry-choice-nav {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: #6f7b89;
+      font-size: 12px;
+    }
+
+    .inquiry-choice-nav button {
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      display: grid;
+      place-items: center;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: #768291;
+    }
+
+    .inquiry-choice-nav button:not(:disabled):hover {
+      background: #f0f3f7;
+      color: #26384d;
+    }
+
+    .inquiry-choice-nav button:disabled {
+      color: #b8c0c9;
+    }
+
+    .inquiry-choice-nav svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .inquiry-choice-list {
+      padding: 4px 0 0;
+    }
+
+    .inquiry-choice-item {
+      width: 100%;
+      min-height: 48px;
+      padding: 0 14px 0 10px;
+      display: grid;
+      grid-template-columns: 30px minmax(0, 1fr) 18px;
+      align-items: center;
+      gap: 12px;
+      border: 0;
+      border-bottom: 1px solid #e7edf4;
+      background: #fff;
+      color: #313e4c;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    .inquiry-choice-item:hover {
+      background: #f7f9fc;
+    }
+
+    .inquiry-choice-item.is-selected {
+      background: #eef1f5;
+    }
+
+    .choice-index {
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #f0f3f6;
+      color: #4d5967;
+      font-weight: 700;
+    }
+
+    .inquiry-choice-item.is-selected .choice-index {
+      background: #fff;
+      color: #1f2b38;
+    }
+
+    .inquiry-choice-item svg {
+      width: 17px;
+      height: 17px;
+      color: #26384d;
+    }
+
+    .inquiry-other-row {
+      width: 100%;
+      min-height: 48px;
+      padding: 0 14px 0 17px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border: 0;
+      background: #fff;
+      color: #7b8795;
+      text-align: left;
+    }
+
+    .inquiry-other-row:hover {
+      background: #f7f9fc;
+      color: #3f5063;
+    }
+
+    .inquiry-other-row svg {
+      width: 17px;
+      height: 17px;
+    }
+
+    .inquiry-choice-footer {
+      min-height: 52px;
+      padding: 7px 8px 7px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-top: 1px solid #e5ebf2;
+      background: #fbfcfe;
+    }
+
+    .inquiry-choice-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: #778493;
+      font-size: 12px;
+    }
+
+    .inquiry-choice-status::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #1c8d65;
+      box-shadow: 0 0 0 3px rgba(28, 141, 101, 0.10);
+    }
+
+    .inquiry-choice-status.has-selection {
+      color: #31506f;
+      font-weight: 650;
+    }
+
+    .inquiry-choice-send {
+      width: 38px;
+      height: 38px;
+      min-width: 38px;
+      padding: 0;
+      display: grid;
+      place-items: center;
+      border: 0;
+      border-radius: 50%;
+      background: #17191c;
+      color: #fff;
+      box-shadow: 0 4px 9px rgba(17, 25, 35, 0.18);
+    }
+
+    .inquiry-choice-send:disabled {
+      background: #c7cdd5;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    .inquiry-choice-send svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .incomplete-manual-link {
+      margin-top: 10px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--brand);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .incomplete-manual-link:hover {
+      text-decoration: underline;
+    }
+
+    .no-data-panel {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 16px;
+      border: 1px solid #f3c9c4;
+      border-radius: 8px;
+      background: #fff8f7;
+    }
+
+    .no-data-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      background: #ffebe8;
+      color: var(--danger);
+    }
+
+    .no-data-panel strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--ink-strong);
+      font-size: 15px;
+    }
+
+    .no-data-panel p {
+      margin: 0;
+      color: #5f7187;
+      line-height: 1.7;
+    }
+
+    .no-data-suggestions {
+      margin-top: 14px;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fafcff;
+    }
+
+    .no-data-suggestions strong {
+      color: var(--ink-strong);
+    }
+
+    .no-data-suggestions ul {
+      margin: 8px 0 0;
+      padding-left: 20px;
+      color: #526b85;
+      line-height: 1.8;
+    }
+
+    .reason-actions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .reason-action {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      text-align: left;
+    }
+
+    .reason-action strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--ink-strong);
+      font-size: 12px;
+    }
+
+    .reason-action span {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    .reason-action.primary {
+      border-color: #9dc8f5;
+      background: var(--brand-soft);
+    }
+
+    .reason-action.primary strong {
+      color: var(--brand);
+    }
+
+    .spec-confirm-message {
+      border-color: #bedaf8;
+    }
+
+    .spec-confirm-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .spec-confirm-item {
+      padding: 11px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fafcff;
+    }
+
+    .spec-confirm-item span {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .spec-confirm-item strong {
+      color: var(--ink-strong);
+      font-size: 13px;
+    }
+
+    .cost-tag {
+      padding: 2px 5px;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.2);
+      font-size: 10px;
+    }
+
+    .manual-case-card {
+      margin-top: 14px;
+      padding: 16px;
+      border: 1px solid #bcd9fb;
+      border-radius: 8px;
+      background: #f7fbff;
+    }
+
+    .manual-case-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .manual-case-head strong {
+      color: var(--ink-strong);
+      font-size: 15px;
+    }
+
+    .case-status {
+      padding: 4px 8px;
+      border: 1px solid #f3cf94;
+      border-radius: 7px;
+      background: #fff7e8;
+      color: var(--warning);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .manual-case-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .manual-case-grid div {
+      padding: 10px;
+      border: 1px solid #dbe8f7;
+      border-radius: 7px;
+      background: #fff;
+    }
+
+    .manual-case-grid span {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .manual-case-grid strong {
+      color: var(--ink);
+      font-size: 12px;
+    }
+
+    .case-timeline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 12px;
+    }
+
+    .case-timeline span {
+      padding: 5px 8px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fff;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .case-timeline span.done {
+      border-color: #bce5cd;
+      background: var(--success-soft);
+      color: var(--success);
+    }
+
+    .case-timeline span.current {
+      border-color: #a9cdf5;
+      background: var(--brand-soft);
+      color: var(--brand);
+      font-weight: 700;
+    }
+
+    .skeleton {
+      height: 15px;
+      border-radius: 6px;
+      background: linear-gradient(90deg, #ecf2f8 25%, #f7faff 37%, #ecf2f8 63%);
+      background-size: 400% 100%;
+      animation: shimmer 1.35s infinite;
+    }
+
+    .skeleton.w70 {
+      width: 70%;
+    }
+
+    .skeleton.w48 {
+      width: 48%;
+    }
+
+    @keyframes shimmer {
+      0% {
+        background-position: 100% 0;
+      }
+      100% {
+        background-position: 0 0;
+      }
+    }
+
+    .history-screen {
+      width: min(1260px, 100%);
+      margin: 0 auto;
+      padding: 22px;
+    }
+
+    .history-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .history-header h1 {
+      margin: 0;
+      color: var(--ink-strong);
+      font-size: 24px;
+    }
+
+    .history-header p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .history-table td:last-child {
+      white-space: nowrap;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 8px;
+      border-radius: 7px;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .status-pill.success {
+      color: var(--success);
+      background: var(--success-soft);
+      border: 1px solid #bce5cd;
+    }
+
+    .status-pill.warning {
+      color: var(--warning);
+      background: var(--warning-soft);
+      border: 1px solid #fed7aa;
+    }
+
+    .status-pill.danger {
+      color: var(--danger);
+      background: var(--danger-soft);
+      border: 1px solid #fecaca;
+    }
+
+    .preview-view {
+      background: #e8edf4;
+      padding: 0 0 44px;
+    }
+
+    .preview-toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      height: 60px;
+      padding: 0 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.97);
+      backdrop-filter: blur(10px);
+    }
+
+    .preview-actions {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .contact-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 0 10px;
+      height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 12px;
+    }
+
+    .contact-toggle input {
+      accent-color: var(--brand);
+    }
+
+    .a4-stage {
+      width: min(820px, calc(100% - 32px));
+      margin: 26px auto 0;
+    }
+
+    .a4-paper {
+      position: relative;
+      width: 100%;
+      min-height: 1120px;
+      padding: 34px 30px 42px;
+      background: #fff;
+      box-shadow: 0 18px 45px rgba(31, 54, 82, 0.18);
+      overflow: hidden;
+    }
+
+    .paper-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .paper-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #ec6e1b;
+      font-size: 25px;
+      font-weight: 800;
+      font-style: italic;
+    }
+
+    .paper-logo-mark {
+      width: 27px;
+      height: 27px;
+      position: relative;
+      transform: rotate(45deg);
+    }
+
+    .paper-logo-mark::before,
+    .paper-logo-mark::after {
+      content: "";
+      position: absolute;
+      background: #f4a125;
+    }
+
+    .paper-logo-mark::before {
+      width: 17px;
+      height: 6px;
+      left: 3px;
+      top: 7px;
+      border-radius: 4px;
+    }
+
+    .paper-logo-mark::after {
+      width: 7px;
+      height: 20px;
+      left: 11px;
+      top: 3px;
+      border-radius: 4px;
+    }
+
+    .paper-header-url {
+      margin-top: 4px;
+      color: #718096;
+      font-size: 9px;
+    }
+
+    .paper-table {
+      min-width: 0;
+      table-layout: fixed;
+    }
+
+    .paper-table th,
+    .paper-table td {
+      padding: 10px 7px;
+      border-color: #b8c2ce;
+      color: #1f2937;
+      font-size: 11px;
+      text-align: center;
+      word-break: break-word;
+    }
+
+    .paper-table th {
+      background: #fff;
+      color: #111827;
+      font-size: 12px;
+    }
+
+    .paper-table tbody tr:hover {
+      background: #fff;
+    }
+
+    .paper-table .material-cell {
+      font-weight: 700;
+    }
+
+    .seal {
+      position: absolute;
+      left: 190px;
+      top: 98px;
+      width: 155px;
+      height: 155px;
+      border: 5px solid rgba(211, 43, 43, 0.86);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: rgba(211, 43, 43, 0.88);
+      font-family: "Songti SC", "SimSun", serif;
+      font-weight: 800;
+      text-align: center;
+      transform: rotate(-15deg);
+      pointer-events: none;
+      z-index: 3;
+      mix-blend-mode: multiply;
+    }
+
+    .seal::before {
+      content: "★";
+      position: absolute;
+      font-size: 48px;
+      color: rgba(211, 43, 43, 0.82);
+    }
+
+    .seal span {
+      position: absolute;
+      width: 94px;
+      font-size: 14px;
+      line-height: 1.2;
+    }
+
+    .seal span:first-child {
+      top: 23px;
+      left: 27px;
+    }
+
+    .seal span:last-child {
+      bottom: 20px;
+      left: 27px;
+    }
+
+    .paper-footer {
+      position: absolute;
+      left: 30px;
+      right: 30px;
+      bottom: 24px;
+      height: 48px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      color: #111827;
+      font-size: 15px;
+    }
+
+    .qr {
+      position: absolute;
+      right: 30px;
+      bottom: 40px;
+      width: 68px;
+      height: 68px;
+      padding: 5px;
+      background:
+        linear-gradient(90deg, #111 12%, transparent 12% 24%, #111 24% 36%, transparent 36% 48%, #111 48% 60%, transparent 60% 72%, #111 72% 84%, transparent 84%),
+        linear-gradient(#111 12%, transparent 12% 24%, #111 24% 36%, transparent 36% 48%, #111 48% 60%, transparent 60% 72%, #111 72% 84%, transparent 84%);
+      background-size: 18px 18px;
+      background-color: #fff;
+      border: 1px solid #111;
+    }
+
+    .manual-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 90;
+      background: rgba(15, 35, 57, 0.34);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 180ms ease, visibility 180ms ease;
+    }
+
+    .manual-modal-backdrop.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .manual-modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      z-index: 95;
+      width: min(620px, calc(100vw - 32px));
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: 0 22px 60px rgba(20, 47, 77, 0.24);
+      transform: translate(-50%, -46%);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 180ms ease, transform 180ms ease, visibility 180ms ease;
+    }
+
+    .manual-modal.open {
+      transform: translate(-50%, -50%);
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .manual-modal-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .manual-modal-head h3 {
+      margin: 0;
+      color: var(--ink-strong);
+      font-size: 18px;
+    }
+
+    .manual-modal-head p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .manual-summary {
+      margin-bottom: 14px;
+      padding: 11px 12px;
+      border: 1px solid #d8e7f8;
+      border-radius: 8px;
+      background: #f8fbff;
+      color: #48627d;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .manual-form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .manual-field {
+      display: grid;
+      gap: 6px;
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .manual-field.full {
+      grid-column: 1 / -1;
+    }
+
+    .manual-field input,
+    .manual-field select,
+    .manual-field textarea {
+      width: 100%;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      font-weight: 400;
+    }
+
+    .manual-field input,
+    .manual-field select {
+      height: 40px;
+      padding: 0 11px;
+    }
+
+    .manual-field textarea {
+      min-height: 78px;
+      padding: 10px 11px;
+      resize: vertical;
+    }
+
+    .manual-consent {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-top: 14px;
+      color: #526b85;
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .manual-consent input {
+      margin-top: 2px;
+      accent-color: var(--brand);
+    }
+
+    .manual-modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 9px;
+      margin-top: 16px;
+    }
+
+    .drawer-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 70;
+      background: rgba(15, 35, 57, 0.28);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 180ms ease, visibility 180ms ease;
+    }
+
+    .drawer-backdrop.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      z-index: 80;
+      width: min(480px, 94vw);
+      height: 100vh;
+      padding: 20px;
+      background: #fff;
+      border-left: 1px solid var(--line);
+      box-shadow: -18px 0 42px rgba(24, 50, 79, 0.16);
+      transform: translateX(102%);
+      transition: transform 220ms ease;
+      overflow-y: auto;
+    }
+
+    .drawer.open {
+      transform: translateX(0);
+    }
+
+    .drawer-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .drawer-head h2 {
+      margin: 0;
+      color: var(--ink-strong);
+      font-size: 18px;
+    }
+
+    .rule-section {
+      padding: 15px 0;
+      border-top: 1px solid #edf1f6;
+    }
+
+    .rule-section:first-of-type {
+      border-top: 0;
+    }
+
+    .rule-section h3 {
+      margin: 0 0 9px;
+      color: var(--ink);
+      font-size: 13px;
+    }
+
+    .rule-grid {
+      display: grid;
+      gap: 7px;
+    }
+
+    .rule-row {
+      display: grid;
+      grid-template-columns: 100px 1fr;
+      gap: 10px;
+      padding: 8px 10px;
+      border: 1px solid #e2e9f2;
+      border-radius: 7px;
+      background: #fafcff;
+      font-size: 12px;
+    }
+
+    .rule-row dt {
+      color: var(--muted);
+    }
+
+    .rule-row dd {
+      margin: 0;
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 26px;
+      z-index: 100;
+      min-width: 240px;
+      max-width: min(520px, calc(100% - 32px));
+      padding: 11px 15px;
+      border: 1px solid #cce0f7;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: var(--shadow);
+      color: var(--ink);
+      text-align: center;
+      transform: translate(-50%, 18px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 180ms ease, transform 180ms ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    @media (max-width: 1120px) {
+      .site-header-inner {
+        grid-template-columns: 180px 1fr auto;
+      }
+
+      .main-nav a {
+        padding-inline: 8px;
+        font-size: 12px;
+      }
+
+      .banner-copy {
+        max-width: calc(100% - 205px);
+      }
+
+      .tongbao-hero-slot {
+        right: 36px;
+        bottom: 72px;
+        width: 180px;
+        height: 180px;
+      }
+
+      .tongbao-hero-label {
+        right: 12px;
+        bottom: 8px;
+      }
+
+      .workspace-view {
+        grid-template-columns: 212px minmax(0, 1fr);
+      }
+
+      .chat-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .composer-shell {
+        left: calc(212px + 22px);
+        right: 22px;
+      }
+    }
+
+    @media (max-width: 820px) {
+      .site-header {
+        height: auto;
+      }
+
+      .site-header-inner {
+        grid-template-columns: 1fr auto;
+        padding: 10px 14px;
+      }
+
+      .main-nav {
+        grid-column: 1 / -1;
+        justify-content: flex-start;
+        overflow-x: auto;
+        order: 3;
+      }
+
+      .main-nav a {
+        padding: 10px;
+      }
+
+      .header-actions span:not(.region) {
+        display: none;
+      }
+
+      .home-main {
+        padding: 0 14px 24px;
+      }
+
+      .home-banner {
+        min-height: 240px;
+        padding: 30px 22px 76px;
+      }
+
+      .banner-copy {
+        max-width: 100%;
+        padding-right: 126px;
+      }
+
+      .tongbao-hero-slot {
+        right: 12px;
+        bottom: 58px;
+        width: 136px;
+        height: 136px;
+      }
+
+      .tongbao-hero-slot::before {
+        inset: 18px 8px 6px;
+      }
+
+      .tongbao-hero-label {
+        right: 4px;
+        bottom: 0;
+        padding: 3px 7px;
+        font-size: 10px;
+      }
+
+      .banner-title {
+        font-size: 28px;
+      }
+
+      .banner-subtitle {
+        font-size: 14px;
+      }
+
+      .search-workbench {
+        width: calc(100% - 24px);
+      }
+
+      .search-row {
+        grid-template-columns: 1fr;
+      }
+
+      .home-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .workspace-view {
+        display: block;
+        height: auto;
+        min-height: 100vh;
+        overflow: visible;
+      }
+
+      .workspace-main {
+        height: auto;
+        min-height: 0;
+        overflow: visible;
+      }
+
+      .screen {
+        overflow: visible;
+      }
+
+      #chatScreen {
+        flex: 1;
+        height: auto;
+      }
+
+      .sidebar {
+        position: static;
+        height: auto;
+        min-height: 0;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .sidebar-brand {
+        height: 56px;
+      }
+
+      .sidebar-content {
+        padding: 10px 12px;
+      }
+
+      .sidebar-section-label,
+      .history-list {
+        display: none;
+      }
+
+      .sidebar-bottom {
+        display: none;
+      }
+
+      .workspace-toolbar {
+        position: static;
+        padding: 10px 14px;
+        height: auto;
+        align-items: flex-start;
+      }
+
+      .toolbar-hint {
+        display: none;
+      }
+
+      .chat-layout,
+      .history-screen {
+        padding: 14px;
+      }
+
+      .conversation {
+        width: auto;
+        margin-left: 0;
+      }
+
+      .composer-shell {
+        left: 14px;
+        right: 14px;
+        width: auto;
+      }
+
+      .composer textarea {
+        min-height: 48px;
+        padding: 10px 12px 3px;
+      }
+
+      .composer-shortcuts {
+        padding-right: 8px;
+        overflow-x: auto;
+      }
+
+      .tongbao-composer-pet {
+        display: none;
+      }
+
+      .composer-bottom {
+        min-height: 36px;
+        padding: 0 8px 7px 12px;
+      }
+
+      .composer-brand,
+      .composer-reasoning,
+      .composer-tools .icon-btn:not(.send-btn) {
+        display: none;
+      }
+
+      .preview-toolbar {
+        height: auto;
+        padding: 10px 14px;
+        align-items: flex-start;
+      }
+
+      .preview-actions {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .a4-paper {
+        min-height: 980px;
+        padding: 24px 14px 40px;
+      }
+
+      .seal {
+        left: 105px;
+        top: 100px;
+        width: 130px;
+        height: 130px;
+      }
+
+      .paper-table {
+        min-width: 760px;
+      }
+
+      .a4-stage {
+        overflow-x: auto;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .banner-copy {
+        padding-right: 0;
+      }
+
+      .home-banner {
+        padding-bottom: 92px;
+      }
+
+      .tongbao-hero-slot {
+        position: static;
+        width: 86px;
+        height: 86px;
+        margin: 14px 2px 0 auto;
+        opacity: 1;
+      }
+
+      .tongbao-hero-label {
+        display: none;
+      }
+
+      .banner-title {
+        font-size: 24px;
+      }
+
+      .banner-pills span {
+        font-size: 11px;
+      }
+
+      .prediction-body {
+        grid-template-columns: 1fr;
+      }
+
+      .prediction-tabs {
+        display: flex;
+        overflow-x: auto;
+        padding: 0;
+        border-right: 0;
+        border-bottom: 1px solid #edf1f6;
+      }
+
+      .prediction-tabs button {
+        width: auto;
+        min-width: 86px;
+        border-left: 0;
+        border-bottom: 3px solid transparent;
+      }
+
+      .prediction-tabs button.active {
+        border-bottom-color: var(--brand);
+      }
+
+      .workspace-toolbar {
+        gap: 8px;
+      }
+
+      .toolbar-status {
+        display: none;
+      }
+
+      .result-summary {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .reason-actions,
+      .manual-form-grid,
+      .manual-case-grid,
+      .spec-confirm-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <section id="homeView" class="view">
+    <header class="site-header">
+      <div class="site-header-inner">
+        <a class="brand" href="#home" aria-label="造价通首页">
+          <span class="brand-mark">造</span>
+          <span class="brand-copy">
+            造价通
+            <small>建设行业大数据服务平台</small>
+          </span>
+        </a>
+        <nav class="main-nav" aria-label="主导航">
+          <a class="active" href="#home">首页</a>
+          <a href="#home"><span class="new-tag">new</span>数智材价</a>
+          <a href="#home">市场价</a>
+          <a href="#home">信息价</a>
+          <a href="#home">询价圈</a>
+          <a href="#home">综合价</a>
+          <a href="#home">服务商城</a>
+          <a href="#home">特色专栏</a>
+          <a href="#home"><span class="new-tag">new</span>标讯数据</a>
+        </nav>
+        <div class="header-actions">
+          <span class="region">广东</span>
+          <span>数智云工作台</span>
+          <span>站内信</span>
+          <span>XMQI</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="home-main">
+      <section class="home-banner">
+        <div class="banner-copy">
+          <div class="banner-kicker">从查价到询价，形成建议价与盖章报价闭环</div>
+          <h1 class="banner-title">数智项目<strong>询价</strong> · 建设工程定价全周期赋能</h1>
+          <p class="banner-subtitle">以材料赋码为核心：定制询价服务 + 数字凭证 + 审计合规一站式支撑</p>
+          <div class="banner-pills">
+            <span>历史项目询价</span>
+            <span>标准材料询价</span>
+            <span>询价溯源与存证</span>
+            <span>报价合理性校验</span>
+          </div>
+        </div>
+        <div class="tongbao-hero-slot" aria-label="通宝形象预留位">
+          <img class="tongbao-hero-image" src="./assets/tongbao/tongbao-hd.png" alt="通宝">
+          <span class="tongbao-hero-label">通宝</span>
+        </div>
+      </section>
+
+      <section class="search-workbench" aria-label="价格查询与AI询价">
+        <div class="search-row">
+          <select class="select-control" aria-label="查询类型">
+            <option>数智材价</option>
+            <option>市场价</option>
+            <option>信息价</option>
+            <option>询价圈</option>
+          </select>
+          <input id="homeQuery" class="text-control" value="广东广州，2026年9月，供水管 PE管DN110，数量4600米" aria-label="材料名称或询价条件">
+          <button class="primary-btn" id="homeSearchBtn" type="button">
+            <i data-lucide="search"></i>
+            搜索
+          </button>
+          <button class="secondary-btn price-entry" id="openPriceCheckBtn" type="button">
+            <i data-lucide="search-check"></i>
+            AI 查价
+          </button>
+          <button class="secondary-btn ai-entry" id="openInquiryBtn" type="button">
+            <img class="tongbao-entry-avatar" src="./assets/tongbao/tongbao-head.png" alt="">
+            AI 询价
+          </button>
+        </div>
+        <div class="category-row" aria-label="材料分类">
+          <button type="button">装配式</button>
+          <button type="button">土建</button>
+          <button type="button">装饰</button>
+          <button type="button">电气</button>
+          <button type="button">给排水</button>
+          <button type="button">暖通</button>
+          <button type="button">市政</button>
+          <button type="button">园林</button>
+          <button type="button">其他</button>
+        </div>
+      </section>
+
+      <section class="home-grid">
+        <article class="section-panel">
+          <div class="section-panel-header">
+            <h2>材价预测</h2>
+            <a href="#home">查看更多</a>
+          </div>
+          <div class="prediction-body">
+            <div class="prediction-tabs" role="tablist" aria-label="材料类型">
+              <button class="active" type="button">钢材</button>
+              <button type="button">混凝土</button>
+              <button type="button">水泥</button>
+              <button type="button">砂石</button>
+            </div>
+            <div class="prediction-content">
+              <div class="prediction-top">
+                <div>
+                  <div class="prediction-label">预测价</div>
+                  <div class="prediction-price">3438.36<small>元</small></div>
+                  <div class="prediction-meta">螺纹钢（规格：HRB400 Φ10 / 单位：t）</div>
+                </div>
+                <div class="legend">
+                  <span><i></i>除税价</span>
+                  <span><i class="orange"></i>预测价</span>
+                </div>
+              </div>
+              <div class="chart" aria-label="价格预测趋势图">
+                <div class="future"></div>
+                <svg viewBox="0 0 600 205" preserveAspectRatio="none" aria-hidden="true">
+                  <path d="M0 174 C38 160 62 163 92 150 S145 139 176 142 S225 120 258 128 S310 103 344 112 S390 88 420 96 S480 77 520 88 S566 67 600 72" fill="none" stroke="#0b6fe8" stroke-width="3"/>
+                  <path d="M344 112 C374 105 398 88 420 96 S470 78 520 88 S570 68 600 72 L600 205 L344 205 Z" fill="rgba(32,178,107,.12)"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <aside class="section-panel">
+          <div class="section-panel-header">
+            <h2>最新信息价</h2>
+            <a href="#home">更多</a>
+          </div>
+          <div class="latest-list">
+            <div class="latest-item">
+              <div><strong>韶关市2026年8月信息价</strong>广东省 · 材料综合价</div>
+              <time>2026/08/05</time>
+            </div>
+            <div class="latest-item">
+              <div><strong>汕尾市陆河县2026年8月信息价</strong>广东省 · 建筑工程</div>
+              <time>2026/08/05</time>
+            </div>
+            <div class="latest-item">
+              <div><strong>肇庆市2026年8月信息价</strong>广东省 · 安装工程</div>
+              <time>2026/08/05</time>
+            </div>
+            <div class="latest-item">
+              <div><strong>珠海市2026年8月信息价</strong>广东省 · 市政工程</div>
+              <time>2026/08/05</time>
+            </div>
+            <div class="latest-item">
+              <div><strong>深圳市2026年8月信息价</strong>广东省 · 装饰工程</div>
+              <time>2026/08/05</time>
+            </div>
+          </div>
+        </aside>
+      </section>
+    </main>
+  </section>
+
+  <section id="workspaceView" class="view workspace-view workspace-empty hidden">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <span class="ai-mark"><img src="./assets/tongbao/tongbao-head.png" alt=""></span>
+        <span>Building D.S.</span>
+        <span class="beta-badge">Beta</span>
+      </div>
+      <div class="sidebar-content">
+        <button class="ghost-btn new-chat" id="newChatBtn" type="button">
+          <i data-lucide="message-square-plus"></i>
+          新建对话
+        </button>
+        <div class="sidebar-section-label">今天</div>
+        <div class="history-list">
+          <button class="history-item active" data-nav="chat" data-history-query="广东广州，2026年9月，供水管 PE管DN110，数量4600米" type="button">
+            <i data-lucide="message-circle"></i>
+            <span>PE管DN110询价</span>
+            <i data-lucide="more-horizontal"></i>
+          </button>
+          <button class="history-item" data-nav="chat" data-history-query="广东广州，2026年9月，超滤膜设备，数量1套" type="button">
+            <i data-lucide="message-circle"></i>
+            <span>超滤膜设备询价</span>
+            <i data-lucide="more-horizontal"></i>
+          </button>
+          <button class="history-item" data-nav="chat" data-history-query="广东广州，2026年9月，普通硅酸盐水泥 P.O42.5，数量200吨" type="button">
+            <i data-lucide="message-circle"></i>
+            <span>水泥P.O42.5询价</span>
+            <i data-lucide="more-horizontal"></i>
+          </button>
+          <button class="history-item" data-nav="chat" data-history-query="广东广州，2026年9月，螺纹钢 HRB400E Φ20，数量85吨" type="button">
+            <i data-lucide="message-circle"></i>
+            <span>螺纹钢HRB400E询价</span>
+            <i data-lucide="more-horizontal"></i>
+          </button>
+          <button class="history-item" data-nav="chat" data-history-query="广东广州，2026年9月，预拌混凝土 C30，数量180m³" type="button">
+            <i data-lucide="message-circle"></i>
+            <span>C30混凝土询价</span>
+            <i data-lucide="more-horizontal"></i>
+          </button>
+          <button class="history-item" data-nav="history" type="button">
+            <i data-lucide="clipboard-list"></i>
+            <span>全部询价记录</span>
+            <i data-lucide="chevron-right"></i>
+          </button>
+        </div>
+      </div>
+      <div class="sidebar-bottom">
+        <div class="quota">
+          使用次数
+          <div>今日剩余：<strong id="todayRemaining">10</strong> 条</div>
+          <div>赠送剩余：<strong id="bonusRemaining">10</strong> 条</div>
+          <div class="quota-rule">查询、修改后提交、重新询价扣 1 次；查看历史和人工询价不扣次。</div>
+        </div>
+        <div class="user-line">
+          <div class="avatar">X</div>
+          <div>
+            <strong>XMQI</strong>
+            <div style="color: var(--muted); font-size: 11px;">企业用户</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="workspace-main">
+      <header class="workspace-toolbar hidden">
+        <div class="toolbar-left">
+          <button class="ghost-btn" id="backHomeBtn" type="button">
+            <i data-lucide="arrow-left"></i>
+            造价通首页
+          </button>
+          <span class="toolbar-title">AI 询价</span>
+          <span class="toolbar-status">标准数据询价</span>
+          <span class="toolbar-hint">本次匹配：3 条供应商报价</span>
+        </div>
+        <div class="toolbar-right">
+          <button class="icon-btn" id="openRulesBtn" type="button" title="内部演示">
+            <i data-lucide="panel-right-open"></i>
+          </button>
+          <button class="ghost-btn" id="voiceBtn" type="button" title="语音输入">
+            <i data-lucide="mic"></i>
+          </button>
+        </div>
+      </header>
+
+      <section id="chatScreen" class="screen">
+        <div class="chat-layout">
+          <div class="conversation" id="conversation"></div>
+
+        </div>
+      </section>
+
+      <section id="historyScreen" class="screen history-screen hidden">
+        <div class="history-header">
+          <div>
+            <h1>历史询价</h1>
+            <p>查看询价条件、推荐结果、无数据回复和盖章文件状态</p>
+          </div>
+          <button class="primary-btn" type="button" id="historyNewBtn">
+            <i data-lucide="plus"></i>
+            新建询价
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>询价时间</th>
+                <th>询价条件</th>
+                <th>推荐结果</th>
+                <th>状态</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>2026-09-15 10:24</td>
+                <td>广东广州 · PE管DN110 · 4600米</td>
+                <td>3 条供应商报价</td>
+                <td><span class="status-pill success"><i data-lucide="check-circle-2"></i>已生成</span></td>
+                <td><button class="ghost-btn" data-history-view="pe">查看结果</button></td>
+              </tr>
+              <tr>
+                <td>2026-09-14 16:08</td>
+                <td>江西定南 · 超滤膜设备 · 1台</td>
+                <td>3 条供应商报价</td>
+                <td><span class="status-pill success"><i data-lucide="check-circle-2"></i>已导出</span></td>
+                <td><button class="ghost-btn" data-history-view="membrane">查看结果</button></td>
+              </tr>
+              <tr>
+                <td>2026-09-24 11:32</td>
+                <td>广东广州 · 普通硅酸盐水泥P.O42.5 · 200吨</td>
+                <td>3 条供应商报价</td>
+                <td><span class="status-pill success"><i data-lucide="check-circle-2"></i>已生成</span></td>
+                <td><button class="ghost-btn" data-history-view="cement">查看结果</button></td>
+              </tr>
+              <tr>
+                <td>2026-09-23 15:10</td>
+                <td>广东广州 · 螺纹钢HRB400E Φ20 · 85吨</td>
+                <td>3 条供应商报价</td>
+                <td><span class="status-pill success"><i data-lucide="check-circle-2"></i>已生成</span></td>
+                <td><button class="ghost-btn" data-history-view="rebar">查看结果</button></td>
+              </tr>
+              <tr>
+                <td>2026-09-22 09:50</td>
+                <td>广东广州 · 预拌混凝土C30 · 180m³</td>
+                <td>3 条供应商报价</td>
+                <td><span class="status-pill success"><i data-lucide="check-circle-2"></i>已生成</span></td>
+                <td><button class="ghost-btn" data-history-view="concrete">查看结果</button></td>
+              </tr>
+              <tr>
+                <td>2026-09-12 09:43</td>
+                <td>广东中山 · PE直通管件PE110 · 650个</td>
+                <td>2 条候选结果</td>
+                <td><span class="status-pill warning"><i data-lucide="alert-circle"></i>结果不足</span></td>
+                <td><button class="ghost-btn" data-history-view="fitting">查看结果</button></td>
+              </tr>
+              <tr>
+                <td>2026-09-10 14:20</td>
+                <td>广东广州 · 特种调节阀DN1200 · 2台</td>
+                <td>暂无可用报价</td>
+                <td><span class="status-pill danger"><i data-lucide="database"></i>数据库无数据</span></td>
+                <td><button class="ghost-btn" data-history-view="empty">演示对话</button></td>
+              </tr>
+              <tr>
+                <td>2026-09-10 14:05</td>
+                <td>广东广州 · 特种调节阀 · 2台</td>
+                <td>缺少规格信息</td>
+                <td><span class="status-pill warning"><i data-lucide="alert-circle"></i>待补充规格</span></td>
+                <td><button class="ghost-btn" data-history-view="incomplete">演示对话</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </section>
+
+  <section id="previewView" class="view preview-view hidden">
+    <header class="preview-toolbar">
+      <div class="toolbar-left">
+        <button class="ghost-btn" id="closePreviewBtn" type="button">
+          <i data-lucide="arrow-left"></i>
+          返回询价结果
+        </button>
+        <span class="toolbar-title">询价盖章报价预览</span>
+      </div>
+      <div class="preview-actions">
+        <label class="contact-toggle">
+          <input id="contactToggle" type="checkbox">
+          内部评审显示联系方式
+        </label>
+        <button class="primary-btn" id="printPreviewBtn" type="button">
+          <i data-lucide="download"></i>
+          下载演示文件
+        </button>
+      </div>
+    </header>
+
+    <div class="a4-stage">
+      <article class="a4-paper" id="a4Paper">
+        <div class="paper-header">
+          <div class="paper-logo">
+            <span class="paper-logo-mark"></span>
+            造价通
+          </div>
+          <div class="paper-header-url">www.zjtcn.com</div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="paper-table">
+            <colgroup>
+              <col style="width: 12%">
+              <col style="width: 19%">
+              <col style="width: 9%">
+              <col style="width: 8%">
+              <col style="width: 9%">
+              <col style="width: 11%">
+              <col style="width: 20%">
+              <col style="width: 12%">
+            </colgroup>
+            <thead>
+              <tr>
+                <th>材料名称</th>
+                <th>规格型号</th>
+                <th>数量</th>
+                <th>单位</th>
+                <th>品牌</th>
+                <th>价格</th>
+                <th>供应商信息</th>
+                <th>回复备注</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="material-cell" rowspan="3">供水管</td>
+                <td rowspan="3">PE管DN110</td>
+                <td rowspan="3">4600</td>
+                <td rowspan="3">m</td>
+                <td rowspan="3">-</td>
+                <td>25.05</td>
+                <td><span class="supplier-name">江西台海管业有限公司</span><br><span class="contact-detail hidden">章经理 13698040607</span></td>
+                <td>报价已含税运<br>（含税13%）</td>
+              </tr>
+              <tr>
+                <td>26.36</td>
+                <td><span class="supplier-name">江西冉升管业有限公司</span><br><span class="contact-detail hidden">刘经理 18179056168</span></td>
+                <td>报价已含税运<br>（含税13%）</td>
+              </tr>
+              <tr>
+                <td>27.14</td>
+                <td><span class="supplier-name">江西鹏欣塑业有限公司</span><br><span class="contact-detail hidden">李先生 18970022833</span></td>
+                <td>报价已含税运<br>（含税13%）</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="seal" aria-label="询价专用章">
+          <span>广东造价通科技<br>股份有限公司</span>
+          <span>询价专用章</span>
+        </div>
+        <div class="qr" aria-label="询价文件二维码"></div>
+        <div class="paper-footer">1</div>
+      </article>
+    </div>
+  </section>
+
+  <div class="manual-modal-backdrop" id="manualModalBackdrop"></div>
+  <section class="manual-modal" id="manualInquiryModal" role="dialog" aria-modal="true" aria-labelledby="manualInquiryTitle">
+    <div class="manual-modal-head">
+      <div>
+        <h3 id="manualInquiryTitle">转人工询价</h3>
+        <p>补充联系方式和报价要求，提交后可在对话中跟踪受理状态。</p>
+      </div>
+      <button class="icon-btn" id="manualCloseBtn" type="button" title="关闭">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <form id="manualInquiryForm">
+      <div class="manual-summary" id="manualMaterialSummary">
+        材料：特种调节阀 · 规格：DN1200 · 数量：2台 · 报价区域：广东广州
+      </div>
+      <div class="manual-form-grid">
+        <label class="manual-field">
+          联系人
+          <input id="manualContact" name="contact" required placeholder="请输入联系人">
+        </label>
+        <label class="manual-field">
+          联系电话
+          <input id="manualPhone" name="phone" required inputmode="tel" placeholder="请输入联系电话">
+        </label>
+        <label class="manual-field">
+          期望回复时间
+          <select id="manualSla" name="sla">
+            <option>2个工作小时内</option>
+            <option>当天下班前</option>
+            <option>24小时内</option>
+          </select>
+        </label>
+        <label class="manual-field">
+          报价口径
+          <select id="manualQuoteBasis" name="quoteBasis">
+            <option>含税含运费</option>
+            <option>含税不含运费</option>
+            <option>不含税不含运费</option>
+          </select>
+        </label>
+        <label class="manual-field full">
+          补充要求
+          <textarea id="manualRequirements" name="requirements" placeholder="可填写品牌、交期、付款条件或供应商范围要求"></textarea>
+        </label>
+      </div>
+      <label class="manual-consent">
+        <input id="manualConsent" type="checkbox" required>
+        我已确认材料信息，并同意平台将本次询价条件提供给匹配供应商。
+      </label>
+      <div class="manual-modal-actions">
+        <button class="ghost-btn" id="manualCancelBtn" type="button">取消</button>
+        <button class="primary-btn" type="submit">
+          <i data-lucide="send"></i>
+          提交人工询价
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+  <aside class="drawer" id="rulesDrawer" aria-label="内部演示规则">
+    <div class="drawer-head">
+      <h2>内部演示数据</h2>
+      <button class="icon-btn" id="closeRulesBtn" type="button" title="关闭">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <section class="rule-section">
+      <h3>材料识别</h3>
+      <dl class="rule-grid">
+        <div class="rule-row"><dt>cid</dt><dd>17</dd></div>
+        <div class="rule-row"><dt>subcid</dt><dd>1703</dd></div>
+        <div class="rule-row"><dt>stdname</dt><dd>PE管</dd></div>
+        <div class="rule-row"><dt>features</dt><dd>公称直径:DN110</dd></div>
+      </dl>
+    </section>
+    <section class="rule-section">
+      <h3>系数映射</h3>
+      <dl class="rule-grid">
+        <div class="rule-row"><dt>命中优先级</dt><dd>第 2 级</dd></div>
+        <div class="rule-row"><dt>映射系数名称</dt><dd>给排水分类（原型数据）</dd></div>
+        <div class="rule-row"><dt>待确认</dt><dd>省份、城市、月份选择规则</dd></div>
+      </dl>
+    </section>
+    <section class="rule-section">
+      <h3>价格推荐</h3>
+      <dl class="rule-grid">
+        <div class="rule-row"><dt>候选记录</dt><dd>按材料动态加载</dd></div>
+        <div class="rule-row"><dt>排序规则</dt><dd>核心时间 → 材料名称 → 询价ID</dd></div>
+        <div class="rule-row"><dt>推荐结果</dt><dd>3 条供应商报价</dd></div>
+      </dl>
+    </section>
+    <section class="rule-section">
+      <h3>价格转换</h3>
+      <dl class="rule-grid">
+        <div class="rule-row"><dt>原始价格</dt><dd>¥25.05 / ¥26.36 / ¥27.14</dd></div>
+        <div class="rule-row"><dt>建议价公式</dt><dd>历史询价 × 对应系数</dd></div>
+        <div class="rule-row"><dt>价格修正</dt><dd>价格修正模型待接入</dd></div>
+      </dl>
+    </section>
+  </aside>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <div class="composer-shell hidden" id="composerShell">
+    <div class="composer-shortcuts" role="toolbar" aria-label="询价方式">
+      <button class="composer-mode" type="button" data-mode="AI查价" data-placeholder="请输入材料名称或关键词，查询市场价、信息价和综合价" aria-pressed="false">
+        <i data-lucide="search-check"></i>
+        AI 查价
+      </button>
+      <button class="composer-mode active" type="button" data-mode="AI询价" data-placeholder="请输入材料名称、规格、地区和目标时间" aria-pressed="true">
+        <i data-lucide="sparkles"></i>
+        AI 询价
+      </button>
+    </div>
+    <div class="composer-stage">
+      <div class="tongbao-composer-pet" aria-hidden="true">
+        <div class="tongbao-composer-bubble" id="tongbaoBubble" role="status" aria-live="polite">
+          告诉我材料名称、规格、数量和地区，我来帮你匹配报价～
+        </div>
+        <img src="./assets/tongbao/poses/final-canonical/05-happy-wave-pet.png" alt="">
+      </div>
+      <form class="composer" id="composer">
+        <div class="composer-edit-hint hidden" id="composerEditHint">
+          <i data-lucide="pencil-line"></i>
+          正在修改本次询价条件
+        </div>
+        <div class="composer-mode-chip hidden" id="composerModeChip">
+          <i id="composerModePriceIcon" data-lucide="search-check"></i>
+          <i id="composerModeInquiryIcon" class="hidden" data-lucide="sparkles"></i>
+          <span id="composerModeLabel">AI 查价</span>
+          <button id="clearComposerModeBtn" type="button" title="关闭 AI 查价">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <textarea id="promptInput" placeholder="请输入材料名称、关键词，多关键词用空格或分号隔开，如“PE管 DN110” / “供水管；PE管”" aria-label="询价条件"></textarea>
+        <div class="composer-bottom">
+          <div class="composer-reasoning-wrap" id="reasoningModeWrap">
+            <div class="reasoning-mode-menu hidden" id="reasoningModeMenu" role="menu" aria-label="思考模式">
+              <button class="reasoning-mode-option active" type="button" role="menuitemradio" aria-checked="true" data-reasoning-mode="fast">
+                <i data-lucide="zap"></i>
+                <span class="reasoning-mode-option-copy">
+                  <strong>快速思考</strong>
+                  <small>更快返回询价结果</small>
+                </span>
+                <em>推荐</em>
+                <i class="reasoning-mode-check" data-lucide="check"></i>
+              </button>
+              <button class="reasoning-mode-option" type="button" role="menuitemradio" aria-checked="false" data-reasoning-mode="deep">
+                <i data-lucide="brain"></i>
+                <span class="reasoning-mode-option-copy">
+                  <strong>深度思考</strong>
+                  <small>增加地区差异与价格合理性复核</small>
+                </span>
+                <i class="reasoning-mode-check" data-lucide="check"></i>
+              </button>
+            </div>
+            <button class="composer-reasoning" id="reasoningModeBtn" type="button" title="选择思考模式" aria-haspopup="menu" aria-expanded="false">
+              <i id="reasoningModeIcon" data-lucide="zap"></i>
+              <span id="reasoningModeLabel">快速思考</span>
+              <em id="reasoningModeTag">推荐</em>
+              <i data-lucide="chevron-down"></i>
+            </button>
+          </div>
+          <div class="composer-tools">
+            <button class="icon-btn" id="composerCalendarBtn" type="button" title="选择日期"><i data-lucide="calendar-days"></i></button>
+            <button class="icon-btn" id="composerRegionBtn" type="button" title="选择地区"><i data-lucide="map-pin"></i></button>
+            <button class="icon-btn composer-symbol-btn" id="composerSymbolBtn" type="button" title="插入符号">符</button>
+            <button class="icon-btn composer-mic-btn" id="composerVoiceBtn" type="button" title="语音输入"><i data-lucide="mic"></i></button>
+            <button class="send-btn" type="submit" title="发送"><i data-lucide="arrow-up"></i></button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="./vendor/lucide.min.js"></script>
+  <script>
+    const views = {
+      home: document.getElementById("homeView"),
+      workspace: document.getElementById("workspaceView"),
+      preview: document.getElementById("previewView")
+    };
+    const chatScreen = document.getElementById("chatScreen");
+    const historyScreen = document.getElementById("historyScreen");
+    const conversation = document.getElementById("conversation");
+    const promptInput = document.getElementById("promptInput");
+    const composerEditHint = document.getElementById("composerEditHint");
+    const composerModeChip = document.getElementById("composerModeChip");
+    const composerModePriceIcon = document.getElementById("composerModePriceIcon");
+    const composerModeInquiryIcon = document.getElementById("composerModeInquiryIcon");
+    const composerModeLabel = document.getElementById("composerModeLabel");
+    const clearComposerModeBtn = document.getElementById("clearComposerModeBtn");
+    const toast = document.getElementById("toast");
+    const composerShell = document.getElementById("composerShell");
+    const rulesDrawer = document.getElementById("rulesDrawer");
+    const drawerBackdrop = document.getElementById("drawerBackdrop");
+    const contactToggle = document.getElementById("contactToggle");
+    const tongbaoBubble = document.getElementById("tongbaoBubble");
+    let toastTimer = null;
+    let tongbaoBubbleTimer = null;
+    let queryTimer = null;
+    let hasSubmittedOnce = false;
+    let reasoningMode = "fast";
+    let todayRemaining = 10;
+    let bonusRemaining = 10;
+    let manualSourceButtonId = null;
+    const tongbaoAvatarPath = "./assets/tongbao/tongbao-head.png";
+    const noDataQueryPattern = /特种调节阀|DN1200|数据库无数据/i;
+    const incompleteSpecPattern = /特种调节阀/;
+    const specTokenPattern = /DN|PN|压力等级|阀体材质|连接方式|规格型号/i;
+    const supplierContactPattern = /(?:供应商.{0,8}(?:联系方式|联系(?:方式|人)?|电话|手机号)|(?:联系方式|联系(?:方式|人)?|电话|手机号).{0,8}供应商|供应商电话)/i;
+    const supplierContactUnavailablePattern = /(?:联系(?:方式|电话|人|不上)|电话|号码).{0,8}(?:不可用|无效|失效|打不通|无法接通|空号|停机|错误|换了|变更)|(?:联系不上|打不通|无法接通|号码不对)/i;
+    const priceSourceQuestionPattern = /(?:(?:价格|报价|建议价).{0,8}(?:来源|怎么来|依据)|(?:来源|依据).{0,8}(?:价格|报价|建议价))/i;
+    const materialInquiryPattern = /(?:材料|询价|报价|价格|市场价|信息价|供应商|水泥|砂浆|砂石|钢筋|混凝土|混泥土|商砼|砼|型钢|管(?:材|件)?|阀(?:门)?|线缆|电缆|桥架|板材|防水|涂料|砖|门窗|泵|风机|灯具|开关|PE|PVC|PPR|HDPE|DN\d*|PN\d*|\d+(?:\.\d+)?\s*(?:mm|毫米|米|m|台|套|个|根|吨|t|kg))/i;
+    let hasShownSupplierContact = false;
+
+    function hydrateTongbaoAvatars() {
+      document.querySelectorAll(".ai-avatar").forEach((avatar) => {
+        avatar.innerHTML = `<img src="${tongbaoAvatarPath}" alt="通宝">`;
+      });
+    }
+
+    function refreshIcons() {
+      hydrateTongbaoAvatars();
+      if (window.lucide) {
+        window.lucide.createIcons({
+          attrs: {
+            "stroke-width": 1.8,
+            "aria-hidden": "true"
+          }
+        });
+      }
+      updateWorkspaceScrollbarOffset();
+    }
+
+    function updateWorkspaceScrollbarOffset() {
+      if (!chatScreen || chatScreen.classList.contains("hidden")) {
+        document.documentElement.style.setProperty("--workspace-scrollbar-width", "0px");
+        return;
+      }
+      const scrollbarWidth = Math.max(0, chatScreen.offsetWidth - chatScreen.clientWidth);
+      document.documentElement.style.setProperty("--workspace-scrollbar-width", `${scrollbarWidth}px`);
+    }
+
+    function showToast(message) {
+      window.clearTimeout(toastTimer);
+      toast.textContent = message;
+      toast.classList.add("show");
+      toastTimer = window.setTimeout(() => toast.classList.remove("show"), 2200);
+    }
+
+    async function copyTextToClipboard(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return;
+      }
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.setAttribute("readonly", "");
+      textArea.style.position = "fixed";
+      textArea.style.opacity = "0";
+      document.body.appendChild(textArea);
+      textArea.select();
+      const copied = document.execCommand("copy");
+      textArea.remove();
+      if (!copied) throw new Error("Copy command failed");
+    }
+
+    function setTongbaoTip(message, tone = "guide") {
+      if (!tongbaoBubble || !message) return;
+      tongbaoBubble.textContent = message;
+      tongbaoBubble.dataset.tone = tone;
+      tongbaoBubble.classList.remove("is-hidden");
+      tongbaoBubble.classList.remove("is-updating");
+      void tongbaoBubble.offsetWidth;
+      tongbaoBubble.classList.add("is-updating");
+      window.clearTimeout(tongbaoBubbleTimer);
+      tongbaoBubbleTimer = window.setTimeout(() => {
+        tongbaoBubble.classList.add("is-hidden");
+        tongbaoBubbleTimer = null;
+      }, 10000);
+    }
+
+    function getComposerTipFromInput(value) {
+      const text = value.trim();
+      const mode = document.querySelector(".composer-mode.active")?.dataset.mode || "AI询价";
+      if (!text) {
+        return mode === "AI查价"
+          ? "输入材料名称或关键词，我来帮你查市场价、信息价和综合价～"
+          : "告诉我材料名称、规格、数量和地区，我来帮你匹配报价～";
+      }
+
+      const hasSpec = /(?:DN|PN|Φ|φ|规格|型号|\d+(?:\.\d+)?\s*(?:mm|毫米|米|m|台|套|个|根|吨|t|kg))/i.test(text);
+      const hasRegion = /(?:广东|广州|深圳|珠海|佛山|东莞|中山|惠州|省|市|区|县)/.test(text);
+      const hasTime = /(?:20\d{2}|年|月|季度|本周|本月|上月)/.test(text);
+
+      if (!hasSpec) {
+        return "已收到材料信息，再补充规格型号、数量和报价地区，我匹配会更准确～";
+      }
+      if (!hasRegion || !hasTime) {
+        return "规格信息已收到，再补充报价地区和目标时间，我就开始查～";
+      }
+      return "条件看起来齐了，提交后我就开始匹配历史询价和市场价～";
+    }
+
+    function updateComposerTipFromInput() {
+      setTongbaoTip(getComposerTipFromInput(promptInput.value));
+    }
+
+    function keepConversationClearOfComposer() {
+      if (composerShell.classList.contains("hidden") || !conversation.lastElementChild || !tongbaoBubble) return;
+      window.requestAnimationFrame(() => {
+        const bubbleTop = tongbaoBubble.getBoundingClientRect().top;
+        const lastMessageBottom = conversation.lastElementChild.getBoundingClientRect().bottom;
+        const requiredBottom = bubbleTop - 18;
+        if (lastMessageBottom <= requiredBottom) return;
+        chatScreen.scrollBy({
+          top: lastMessageBottom - requiredBottom + 24,
+          behavior: "smooth"
+        });
+      });
+    }
+
+    function updateQuotaUI() {
+      const remainingNode = document.getElementById("todayRemaining");
+      if (remainingNode) remainingNode.textContent = String(todayRemaining);
+      const bonusNode = document.getElementById("bonusRemaining");
+      if (bonusNode) bonusNode.textContent = String(bonusRemaining);
+    }
+
+    function consumeQueryCredit(actionLabel) {
+      if (todayRemaining > 0) {
+        todayRemaining -= 1;
+      } else if (bonusRemaining > 0) {
+        bonusRemaining -= 1;
+      } else {
+        showToast("查询次数已用完，可转人工询价");
+        setTongbaoTip("查询次数已用完，可以转人工询价继续处理～", "warning");
+        return false;
+      }
+
+      updateQuotaUI();
+      showToast(`${actionLabel}已消耗 1 次查询次数`);
+      return true;
+    }
+
+    function enterModifyMode(prefillText, message) {
+      const currentText = typeof prefillText === "string"
+        ? prefillText
+        : conversation.querySelector(".user-message")?.textContent.trim() || document.getElementById("homeQuery").value;
+      promptInput.value = currentText;
+      composerShell.classList.add("editing");
+      composerEditHint.classList.remove("hidden");
+      promptInput.focus();
+      promptInput.setSelectionRange(promptInput.value.length, promptInput.value.length);
+      showToast(typeof message === "string" ? message : "已载入当前询价条件，可直接修改后提交");
+      setTongbaoTip("已载入当前询价条件，修改后提交会重新查询并扣减 1 次～");
+    }
+
+    function clearModifyMode() {
+      composerShell.classList.remove("editing");
+      composerEditHint.classList.add("hidden");
+    }
+
+    function setView(name) {
+      Object.entries(views).forEach(([key, element]) => {
+        element.classList.toggle("hidden", key !== name);
+      });
+      composerShell.classList.toggle("hidden", name !== "workspace");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function setWorkspaceScreen(name) {
+      setView("workspace");
+      chatScreen.classList.toggle("hidden", name !== "chat");
+      historyScreen.classList.toggle("hidden", name !== "history");
+      composerShell.classList.toggle("hidden", name !== "chat");
+      if (name === "history") {
+        views.workspace.classList.remove("workspace-empty");
+        historyScreen.scrollTop = 0;
+      } else {
+        chatScreen.scrollTop = 0;
+      }
+      document.querySelectorAll("[data-nav]").forEach((button) => {
+        button.classList.toggle("active", button.dataset.nav === name);
+      });
+    }
+
+    const historyInquiryRecords = [
+      {
+        queryId: "INQ-20260920-001",
+        materialName: "供水管",
+        spec: "PE管 DN110",
+        quantity: 4600,
+        unit: "m",
+        brand: "-",
+        suggestedPrice: "25.05",
+        supplier: "江西台海管业有限公司",
+        replyNote: "报价已含税运（含税13%）",
+        replyTime: "2026-09-20"
+      },
+      {
+        queryId: "INQ-20260918-002",
+        materialName: "供水管",
+        spec: "PE管 DN110",
+        quantity: 4600,
+        unit: "m",
+        brand: "-",
+        suggestedPrice: "26.36",
+        supplier: "江西冉升管业有限公司",
+        replyNote: "报价已含税运（含税13%）",
+        replyTime: "2026-09-18"
+      },
+      {
+        queryId: "INQ-20260915-003",
+        materialName: "供水管",
+        spec: "PE管 DN110",
+        quantity: 4600,
+        unit: "m",
+        brand: "-",
+        suggestedPrice: "27.14",
+        supplier: "江西鹏欣塑业有限公司",
+        replyNote: "报价已含税运（含税13%）",
+        replyTime: "2026-09-15"
+      },
+      {
+        queryId: "INQ-20231018-004",
+        materialName: "供水管",
+        spec: "PE管 DN110",
+        quantity: 4600,
+        unit: "m",
+        brand: "-",
+        suggestedPrice: "23.86",
+        supplier: "江西台海管业有限公司",
+        replyNote: "报价已含税运（含税13%）",
+        replyTime: "2023-10-31"
+      },
+      {
+        queryId: "INQ-20231002-006",
+        materialName: "给水管",
+        spec: "PE管 DN110",
+        quantity: 4600,
+        unit: "m",
+        brand: "-",
+        suggestedPrice: "24.12",
+        supplier: "江西冉升管业有限公司",
+        replyNote: "报价已含税运（含税13%）",
+        replyTime: "2023-10-31"
+      },
+      {
+        queryId: "INQ-20231002-005",
+        materialName: "给水管",
+        spec: "PE管 DN110",
+        quantity: 4600,
+        unit: "m",
+        brand: "-",
+        suggestedPrice: "24.26",
+        supplier: "江西鹏欣塑业有限公司",
+        replyNote: "报价已含税运（含税13%）",
+        replyTime: "2023-10-31"
+      },
+      {
+        queryId: "INQ-20231103-007",
+        materialName: "PE管",
+        spec: "PE管 DN110",
+        quantity: 4600,
+        unit: "m",
+        brand: "-",
+        suggestedPrice: "24.48",
+        supplier: "江西台海管业有限公司",
+        replyNote: "报价已含税运（含税13%）",
+        replyTime: "2023-11-03"
+      },
+      {
+        queryId: "INQ-20260922-101",
+        materialName: "超滤膜设备",
+        spec: "PVDF中空纤维膜 · 20m³/h",
+        quantity: 1,
+        unit: "套",
+        brand: "碧水源",
+        suggestedPrice: "45200.00",
+        supplier: "北京碧水源科技股份有限公司",
+        contactName: "张经理",
+        contactPhone: "400-800-4520",
+        replyNote: "含税13%，含运费，不含安装",
+        replyTime: "2026-09-22"
+      },
+      {
+        queryId: "INQ-20260918-102",
+        materialName: "超滤膜设备",
+        spec: "PVDF中空纤维膜 · 20m³/h",
+        quantity: 1,
+        unit: "套",
+        brand: "立升",
+        suggestedPrice: "46500.00",
+        supplier: "海南立昇净水科技实业有限公司",
+        contactName: "李经理",
+        contactPhone: "400-800-4650",
+        replyNote: "含税13%，含运费及调试",
+        replyTime: "2026-09-18"
+      },
+      {
+        queryId: "INQ-20260912-103",
+        materialName: "超滤膜设备",
+        spec: "PVDF中空纤维膜 · 20m³/h",
+        quantity: 1,
+        unit: "套",
+        brand: "膜天膜",
+        suggestedPrice: "47800.00",
+        supplier: "天津膜天膜科技股份有限公司",
+        contactName: "王经理",
+        contactPhone: "400-800-4780",
+        replyNote: "含税13%，含运费，质保1年",
+        replyTime: "2026-09-12"
+      },
+      {
+        queryId: "INQ-20260924-201",
+        materialName: "普通硅酸盐水泥",
+        spec: "P.O 42.5 · 袋装",
+        quantity: 200,
+        unit: "吨",
+        brand: "海螺",
+        suggestedPrice: "428.00",
+        supplier: "安徽海螺水泥股份有限公司",
+        contactName: "周经理",
+        contactPhone: "400-800-4280",
+        replyNote: "含税13%，含运费",
+        replyTime: "2026-09-24"
+      },
+      {
+        queryId: "INQ-20260919-202",
+        materialName: "普通硅酸盐水泥",
+        spec: "P.O 42.5 · 袋装",
+        quantity: 200,
+        unit: "吨",
+        brand: "华润",
+        suggestedPrice: "436.00",
+        supplier: "华润建材科技有限公司",
+        contactName: "吴经理",
+        contactPhone: "400-800-4360",
+        replyNote: "含税13%，不含卸车费",
+        replyTime: "2026-09-19"
+      },
+      {
+        queryId: "INQ-20260914-203",
+        materialName: "普通硅酸盐水泥",
+        spec: "P.O 42.5 · 袋装",
+        quantity: 200,
+        unit: "吨",
+        brand: "塔牌",
+        suggestedPrice: "445.00",
+        supplier: "广东塔牌集团股份有限公司",
+        contactName: "黄经理",
+        contactPhone: "400-800-4450",
+        replyNote: "含税13%，含运费及卸车",
+        replyTime: "2026-09-14"
+      },
+      {
+        queryId: "INQ-20260828-204",
+        materialName: "普通硅酸盐水泥",
+        spec: "P.O 42.5 · 袋装",
+        quantity: 200,
+        unit: "吨",
+        brand: "海螺",
+        suggestedPrice: "420.00",
+        supplier: "英德海螺水泥有限责任公司",
+        contactName: "邓经理",
+        contactPhone: "400-800-4200",
+        replyNote: "含税13%，含运费，需提前3天预约",
+        replyTime: "2026-08-28"
+      },
+      {
+        queryId: "INQ-20260923-301",
+        materialName: "螺纹钢",
+        spec: "HRB400E Φ20",
+        quantity: 85,
+        unit: "吨",
+        brand: "韶钢",
+        suggestedPrice: "3840.00",
+        supplier: "广东韶钢松山股份有限公司",
+        contactName: "林经理",
+        contactPhone: "400-800-3840",
+        replyNote: "含税13%，含运费",
+        replyTime: "2026-09-23"
+      },
+      {
+        queryId: "INQ-20260917-302",
+        materialName: "螺纹钢",
+        spec: "HRB400E Φ20",
+        quantity: 85,
+        unit: "吨",
+        brand: "广钢",
+        suggestedPrice: "3880.00",
+        supplier: "广州广钢新材料股份有限公司",
+        contactName: "郑经理",
+        contactPhone: "400-800-3880",
+        replyNote: "含税13%，含运费，货到付款",
+        replyTime: "2026-09-17"
+      },
+      {
+        queryId: "INQ-20260910-303",
+        materialName: "螺纹钢",
+        spec: "HRB400E Φ20",
+        quantity: 85,
+        unit: "吨",
+        brand: "柳钢",
+        suggestedPrice: "3920.00",
+        supplier: "广西柳州钢铁集团有限公司",
+        contactName: "覃经理",
+        contactPhone: "400-800-3920",
+        replyNote: "含税13%，含运费，3日内发货",
+        replyTime: "2026-09-10"
+      },
+      {
+        queryId: "INQ-20260830-304",
+        materialName: "螺纹钢",
+        spec: "HRB400E Φ20",
+        quantity: 85,
+        unit: "吨",
+        brand: "敬业",
+        suggestedPrice: "3780.00",
+        supplier: "广东敬业钢铁实业股份有限公司",
+        contactName: "彭经理",
+        contactPhone: "400-800-3780",
+        replyNote: "含税13%，不含运费",
+        replyTime: "2026-08-30"
+      },
+      {
+        queryId: "INQ-20260925-401",
+        materialName: "预拌混凝土",
+        spec: "C30 · 泵送",
+        quantity: 180,
+        unit: "m³",
+        brand: "-",
+        suggestedPrice: "462.00",
+        supplier: "广州城建混凝土有限公司",
+        contactName: "罗经理",
+        contactPhone: "400-800-4620",
+        replyNote: "含税3%，含泵送费",
+        replyTime: "2026-09-25"
+      },
+      {
+        queryId: "INQ-20260916-402",
+        materialName: "预拌混凝土",
+        spec: "C30 · 泵送",
+        quantity: 180,
+        unit: "m³",
+        brand: "-",
+        suggestedPrice: "470.00",
+        supplier: "广东建工混凝土有限公司",
+        contactName: "梁经理",
+        contactPhone: "400-800-4700",
+        replyNote: "含税3%，含泵送费，夜间施工另计",
+        replyTime: "2026-09-16"
+      },
+      {
+        queryId: "INQ-20260909-403",
+        materialName: "预拌混凝土",
+        spec: "C30 · 泵送",
+        quantity: 180,
+        unit: "m³",
+        brand: "-",
+        suggestedPrice: "478.00",
+        supplier: "佛山市汇江混凝土有限公司",
+        contactName: "何经理",
+        contactPhone: "400-800-4780",
+        replyNote: "含税3%，含泵送费及等待费",
+        replyTime: "2026-09-09"
+      },
+      {
+        queryId: "INQ-20260826-404",
+        materialName: "预拌混凝土",
+        spec: "C30 · 泵送",
+        quantity: 180,
+        unit: "m³",
+        brand: "-",
+        suggestedPrice: "455.00",
+        supplier: "广州羊城混凝土有限公司",
+        contactName: "潘经理",
+        contactPhone: "400-800-4550",
+        replyNote: "含税3%，含泵送费，限市区配送",
+        replyTime: "2026-08-26"
+      },
+      {
+        queryId: "INQ-20260912-501",
+        materialName: "PE直通管件",
+        spec: "PE110",
+        quantity: 650,
+        unit: "个",
+        brand: "-",
+        suggestedPrice: "5.68",
+        supplier: "广东联塑科技实业有限公司",
+        contactName: "赵经理",
+        contactPhone: "400-800-5680",
+        replyNote: "含税13%，含运费",
+        replyTime: "2026-09-12"
+      },
+      {
+        queryId: "INQ-20260908-502",
+        materialName: "PE直通管件",
+        spec: "PE110",
+        quantity: 650,
+        unit: "个",
+        brand: "-",
+        suggestedPrice: "5.92",
+        supplier: "广东雄塑科技集团股份有限公司",
+        contactName: "冯经理",
+        contactPhone: "400-800-5920",
+        replyNote: "含税13%，含运费，3日内发货",
+        replyTime: "2026-09-08"
+      }
+    ];
+    let currentRecommendations = [];
+    const chineseMaterialCollator = new Intl.Collator("zh-Hans-CN-u-co-pinyin", {
+      sensitivity: "base",
+      numeric: false
+    });
+
+    function getInquiryTargetTime(query) {
+      const queryText = String(query);
+      const fullYearMonthDayMatch = queryText.match(/(20\d{2})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日?/);
+      const separatedFullDateMatch = queryText.match(/(20\d{2})[-/.](\d{1,2})[-/.](\d{1,2})/);
+      const fullDateMatch = fullYearMonthDayMatch || separatedFullDateMatch;
+      if (fullDateMatch) {
+        const month = Math.min(12, Math.max(1, Number(fullDateMatch[2])));
+        const day = Math.min(31, Math.max(1, Number(fullDateMatch[3])));
+        return new Date(Number(fullDateMatch[1]), month - 1, day, 23, 59, 59, 999).getTime();
+      }
+      const yearMonthMatch = queryText.match(/(20\d{2})\s*年\s*(\d{1,2})\s*月/);
+      const separatedYearMonthMatch = queryText.match(/(20\d{2})[-/.](\d{1,2})(?![-/.]\d)/);
+      const yearMonth = yearMonthMatch || separatedYearMonthMatch;
+      if (!yearMonth) return Date.now();
+      const month = Math.min(12, Math.max(1, Number(yearMonth[2])));
+      return new Date(Number(yearMonth[1]), month, 0, 23, 59, 59, 999).getTime();
+    }
+
+    function getMaterialNameSortGroup(name) {
+      const firstChar = String(name || "").trim().charAt(0);
+      if (/[\u3400-\u9fff]/u.test(firstChar)) return 0;
+      if (/[A-Za-z]/.test(firstChar)) return 1;
+      if (/\d/.test(firstChar)) return 2;
+      return 3;
+    }
+
+    function compareMaterialNames(left, right) {
+      const leftName = String(left.materialName || "").trim();
+      const rightName = String(right.materialName || "").trim();
+      const leftGroup = getMaterialNameSortGroup(leftName);
+      const rightGroup = getMaterialNameSortGroup(rightName);
+      if (leftGroup !== rightGroup) return leftGroup - rightGroup;
+      if (leftGroup === 0) return chineseMaterialCollator.compare(leftName, rightName);
+      return leftName < rightName ? -1 : leftName > rightName ? 1 : 0;
+    }
+
+    function compareInquiryIds(left, right) {
+      const leftId = String(left.queryId || "");
+      const rightId = String(right.queryId || "");
+      return leftId.localeCompare(rightId, "en", { numeric: true, sensitivity: "variant" });
+    }
+
+    function getMaterialCategory(text) {
+      const value = String(text || "");
+      if (/超滤膜|超滤设备|UF膜/i.test(value)) return "ultrafiltration";
+      if (/水泥|P\.O\s*42\.5/i.test(value)) return "cement";
+      if (/钢筋|螺纹钢|盘螺|HRB\d*/i.test(value)) return "rebar";
+      if (/混凝土|混泥土|商砼|砼|C30/i.test(value)) return "concrete";
+      if (/直通|管件|PE110/i.test(value)) return "fitting";
+      return "pe-pipe";
+    }
+
+    function getTopHistoricalRecommendations(query) {
+      const targetTime = getInquiryTargetTime(query);
+      const queryCategory = getMaterialCategory(query);
+      const candidateRecords = historyInquiryRecords.filter((record) => (
+        getMaterialCategory(`${record.materialName} ${record.spec}`) === queryCategory
+      ));
+      return candidateRecords
+        .map((record) => ({
+          ...record,
+          timeDistance: record.replyTime
+            ? Math.abs(new Date(`${record.replyTime}T00:00:00`).getTime() - targetTime)
+            : Number.POSITIVE_INFINITY
+        }))
+        .sort((left, right) => {
+          if (left.timeDistance !== right.timeDistance) return left.timeDistance - right.timeDistance;
+          const materialResult = compareMaterialNames(left, right);
+          if (materialResult !== 0) return materialResult;
+          return compareInquiryIds(left, right);
+        })
+        .slice(0, 3);
+    }
+
+    function recommendationRowsMarkup(recommendations) {
+      const sharedFields = ["materialName", "spec", "quantity", "unit", "brand"];
+      const useSharedCells = recommendations.length > 1 && sharedFields.every((field) =>
+        recommendations.every((record) => record[field] === recommendations[0][field])
+      );
+      return recommendations.map((record, index) => {
+        const leadingCells = index === 0
+          ? `
+                  <td${useSharedCells ? ` rowspan="${recommendations.length}"` : ""}>${record.materialName}</td>
+                  <td${useSharedCells ? ` rowspan="${recommendations.length}"` : ""}>${record.spec}</td>
+                  <td${useSharedCells ? ` rowspan="${recommendations.length}"` : ""}>${record.quantity}</td>
+                  <td${useSharedCells ? ` rowspan="${recommendations.length}"` : ""}>${record.unit}</td>
+                  <td${useSharedCells ? ` rowspan="${recommendations.length}"` : ""}>${record.brand}</td>`
+          : useSharedCells
+            ? ""
+            : `
+                  <td>${record.materialName}</td>
+                  <td>${record.spec}</td>
+                  <td>${record.quantity}</td>
+                  <td>${record.unit}</td>
+                  <td>${record.brand}</td>`;
+        return `
+                <tr>${leadingCells}
+                  <td class="price-value">${record.suggestedPrice}</td>
+                  <td><div class="supplier-name">${record.supplier}</div></td>
+                  <td>${record.replyNote}</td>
+                </tr>`;
+      }).join("");
+    }
+
+    function resultMarkup(query = "") {
+      const recommendations = getTopHistoricalRecommendations(query);
+      currentRecommendations = recommendations;
+      const prices = recommendations.map((record) => Number(record.suggestedPrice));
+      const minPrice = Math.min(...prices).toFixed(2);
+      const maxPrice = Math.max(...prices).toFixed(2);
+      const unit = recommendations[0]?.unit || "m";
+      const recommendationSummary = recommendations.length >= 3
+        ? "通宝给您推荐3条最优供应商报价"
+        : `通宝给您展示全部${recommendations.length}条候选供应商报价`;
+      return `
+        <article class="ai-message">
+          <div class="ai-message-head">
+            <div class="ai-avatar"><i data-lucide="sparkles"></i></div>
+            <div>
+              <div class="ai-message-title">已识别为标准材料或设备，并完成历史询价匹配</div>
+              <div class="ai-message-subtitle">${recommendationSummary}</div>
+            </div>
+          </div>
+          <div class="result-summary">
+            <div>
+              <h3>询价建议结果</h3>
+              <p>建议价区间 ¥${minPrice} - ¥${maxPrice} / ${unit} · 含税13% · 含运费</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>材料名称</th><th>规格型号</th><th>数量</th><th>单位</th><th>品牌</th>
+                  <th>建议价</th><th>供应商信息</th><th>回复备注</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${recommendationRowsMarkup(recommendations)}
+              </tbody>
+            </table>
+          </div>
+          <div class="result-actions">
+            <button class="primary-btn" id="exportBtn" type="button"><i data-lucide="file-badge-2"></i>导出询价盖章报价</button>
+            <button class="ghost-btn" id="modifyBtn" type="button"><i data-lucide="sliders-horizontal"></i>修改条件</button>
+          </div>
+          <div class="result-feedback-actions" aria-label="询价建议反馈">
+            <button class="result-feedback-btn" id="copyResultBtn" type="button" title="复制询价建议" aria-label="复制询价建议"><i data-lucide="copy"></i></button>
+            <button class="result-feedback-btn" data-result-feedback="like" type="button" title="有帮助" aria-label="有帮助" aria-pressed="false"><i data-lucide="thumbs-up"></i></button>
+            <button class="result-feedback-btn" data-result-feedback="dislike" type="button" title="没帮助" aria-label="没帮助" aria-pressed="false"><i data-lucide="thumbs-down"></i></button>
+            <button class="result-feedback-btn" id="retryBtn" type="button" data-tooltip="点击将重新生成询价结果，并消耗1条询价使用次数" aria-label="重新生成询价建议"><i data-lucide="refresh-cw"></i></button>
+          </div>
+          <p class="result-manual-hint">
+            若您搜索的问题未找到完全匹配数据，您可以去找造价通发布人工询价：
+            <button class="result-manual-link" id="resultManualInquiryBtn" type="button">询价圈</button>
+          </p>
+        </article>`;
+    }
+
+    function noDataMarkup() {
+      return `
+        <article class="ai-message no-data-message">
+          <div class="ai-message-head">
+            <div class="ai-avatar"><i data-lucide="database"></i></div>
+            <div>
+              <div class="ai-message-title">暂无法自动查询到可用数据</div>
+              <div class="ai-message-subtitle">可能是目标时间过久或数据库暂未收录</div>
+            </div>
+          </div>
+          <div class="no-data-panel">
+            <div class="no-data-icon"><i data-lucide="search-x"></i></div>
+            <div>
+              <strong>本次暂无法生成询价建议</strong>
+              <p>未找到与“广东广州 · 特种调节阀DN1200 · 2台”匹配的可用记录，可能已超出数据库可查询时间范围，或该规格暂未收录。为避免误导，本次不会生成建议价和供应商报价。</p>
+            </div>
+          </div>
+          <div class="no-data-suggestions">
+            <strong>无法自动查询的常见原因</strong>
+            <ul>
+              <li>目标时间较早，超出数据库可查询范围</li>
+              <li>数据库暂未收录该材料、规格或报价区域</li>
+              <li>现有记录无法满足当前数量、税费或运输条件</li>
+            </ul>
+          </div>
+          <div class="reason-actions">
+            <button class="reason-action" id="noDataTimeBtn" type="button">
+              <strong>调整目标时间</strong>
+              <span>选择数据库可查询的时间范围后重试</span>
+            </button>
+            <button class="reason-action" id="noDataRegionBtn" type="button">
+              <strong>扩大报价区域</strong>
+              <span>增加周边地区，提升匹配到供应商的概率</span>
+            </button>
+            <button class="reason-action primary" id="noDataManualBtn" type="button">
+              <strong>转人工询价</strong>
+              <span>由工作人员核实需求并联系供应商</span>
+            </button>
+          </div>
+        </article>`;
+    }
+
+    function incompleteSpecMarkup() {
+      return `
+        <article class="ai-message incomplete-spec-message">
+          <div class="ai-message-head">
+            <div class="ai-avatar"><i data-lucide="alert-circle"></i></div>
+            <div>
+              <div class="ai-message-title">缺少关键规格，暂时无法查询</div>
+              <div class="ai-message-subtitle">请选择需要补充的信息，确认后继续查询</div>
+            </div>
+          </div>
+          <div class="no-data-panel">
+            <div class="no-data-icon"><i data-lucide="list-plus"></i></div>
+            <div>
+              <strong>当前材料信息不完整</strong>
+              <p>现有条件缺少可用于标准材料匹配的关键规格，请从下方选择一项后再提交。</p>
+            </div>
+          </div>
+          <div class="inquiry-choice-panel" id="incompleteChoicePanel">
+            <div class="inquiry-choice-head">
+              <strong>需要补充哪项关键规格？</strong>
+              <div class="inquiry-choice-nav">
+                <button id="incompletePrevBtn" type="button" disabled aria-label="上一页"><i data-lucide="chevron-left"></i></button>
+                <span id="incompleteChoicePage">1/2</span>
+                <button id="incompleteNextBtn" type="button" disabled aria-label="下一页"><i data-lucide="chevron-right"></i></button>
+                <button id="closeIncompleteChoiceBtn" type="button" aria-label="关闭"><i data-lucide="x"></i></button>
+              </div>
+            </div>
+            <div class="inquiry-choice-list" role="listbox" aria-label="可补充的关键规格">
+              <button class="inquiry-choice-item" type="button" role="option" aria-pressed="false" data-choice-value="diameter">
+                <span class="choice-index">1</span>
+                <span>规格型号 / 公称直径 DN</span>
+                <i data-lucide="arrow-right"></i>
+              </button>
+              <button class="inquiry-choice-item" type="button" role="option" aria-pressed="false" data-choice-value="pressure">
+                <span class="choice-index">2</span>
+                <span>压力等级 PN / 适用工况</span>
+                <i data-lucide="arrow-right"></i>
+              </button>
+              <button class="inquiry-choice-item" type="button" role="option" aria-pressed="false" data-choice-value="material">
+                <span class="choice-index">3</span>
+                <span>阀体材质 / 连接方式</span>
+                <i data-lucide="arrow-right"></i>
+              </button>
+              <button class="inquiry-choice-item" type="button" role="option" aria-pressed="false" data-choice-value="brand">
+                <span class="choice-index">4</span>
+                <span>品牌要求 / 适用工况</span>
+                <i data-lucide="arrow-right"></i>
+              </button>
+            </div>
+            <button class="inquiry-other-row" id="incompleteOtherBtn" type="button">
+              <i data-lucide="paperclip"></i>
+              <span>其他补充...</span>
+            </button>
+            <div class="inquiry-choice-footer">
+              <span class="inquiry-choice-status" id="incompleteChoiceStatus">等待用户确认</span>
+              <button class="inquiry-choice-send" id="confirmIncompleteChoiceBtn" type="button" disabled aria-label="发送补充信息">
+                <i data-lucide="arrow-up"></i>
+              </button>
+            </div>
+          </div>
+          <button class="incomplete-manual-link" id="incompleteManualBtn" type="button">或转人工询价</button>
+        </article>`;
+    }
+
+    function specConfirmationMarkup(query) {
+      const dn = query.match(/DN\s*\d+/i)?.[0]?.toUpperCase() || "待确认";
+      const pn = query.match(/PN\s*\d+(\.\d+)?/i)?.[0]?.toUpperCase() || "待确认";
+      const material = /不锈钢/.test(query) ? "不锈钢" : /铸钢/.test(query) ? "铸钢" : "以用户输入为准";
+      const connection = /法兰/.test(query) ? "法兰连接" : /螺纹/.test(query) ? "螺纹连接" : "以用户输入为准";
+      return `
+        <article class="ai-message spec-confirm-message">
+          <div class="ai-message-head">
+            <div class="ai-avatar"><i data-lucide="clipboard-check"></i></div>
+            <div>
+              <div class="ai-message-title">已补充规格，请确认查询条件</div>
+              <div class="ai-message-subtitle">确认后将消耗 1 次查询次数并开始重新匹配</div>
+            </div>
+          </div>
+          <div class="spec-confirm-grid">
+            <div class="spec-confirm-item"><span>材料</span><strong>特种调节阀</strong></div>
+            <div class="spec-confirm-item"><span>规格型号</span><strong>${dn}</strong></div>
+            <div class="spec-confirm-item"><span>压力等级</span><strong>${pn}</strong></div>
+            <div class="spec-confirm-item"><span>材质 / 连接方式</span><strong>${material} / ${connection}</strong></div>
+          </div>
+          <div class="result-actions">
+            <button class="primary-btn" id="confirmSpecQueryBtn" type="button">
+              确认并查询
+              <span class="cost-tag">扣1次</span>
+            </button>
+            <button class="ghost-btn" id="continueSpecEditBtn" type="button">
+              <i data-lucide="square-pen"></i>
+              继续修改
+            </button>
+          </div>
+        </article>`;
+    }
+
+    function agentTurnMarkup(title, text) {
+      return `
+        <div class="agent-turn">
+          <div class="ai-avatar"><i data-lucide="sparkles"></i></div>
+          <div class="agent-turn-bubble">
+            <strong>${title}</strong>
+            <p>${text}</p>
+          </div>
+        </div>`;
+    }
+
+    function appendSupplierContactReply(query) {
+      const fallbackContacts = {
+        "江西台海管业有限公司": { contactName: "王经理", contactPhone: "400-800-1025" },
+        "江西冉升管业有限公司": { contactName: "刘经理", contactPhone: "400-800-2636" },
+        "江西鹏欣塑业有限公司": { contactName: "陈经理", contactPhone: "400-800-2714" }
+      };
+      const contacts = currentRecommendations.map((record) => {
+        const fallback = fallbackContacts[record.supplier] || { contactName: "客户经理", contactPhone: "400-800-0000" };
+        return {
+          supplier: record.supplier,
+          contactName: record.contactName || fallback.contactName,
+          contactPhone: record.contactPhone || fallback.contactPhone
+        };
+      });
+      conversation.insertAdjacentHTML("beforeend", `
+        <div class="user-message">${query.replace(/[<>]/g, "")}</div>
+        <div class="agent-turn">
+          <div class="ai-avatar"><i data-lucide="sparkles"></i></div>
+          <div class="agent-turn-bubble">
+            <strong>供应商联系方式</strong>
+            <p>以下为本次询价报价记录对应的供应商对接方式：</p>
+            <div class="supplier-contact-list">
+              ${contacts.map((contact) => `<div class="supplier-contact-item"><strong>${contact.supplier} · ${contact.contactName}</strong><span class="supplier-contact-phone">${contact.contactPhone}</span></div>`).join("")}
+            </div>
+          </div>
+        </div>`);
+      hasShownSupplierContact = true;
+      promptInput.value = "";
+      refreshIcons();
+      setTongbaoTip("已为您提供供应商对接方式，请联系时说明材料规格和询价时间～", "success");
+      keepConversationClearOfComposer();
+    }
+
+    function appendSupplierContactUnavailableReply(query) {
+      conversation.insertAdjacentHTML("beforeend", `
+        <div class="user-message">${query.replace(/[<>]/g, "")}</div>
+        <div class="agent-turn">
+          <div class="ai-avatar"><i data-lucide="sparkles"></i></div>
+          <div class="agent-turn-bubble">
+            <strong>联系方式暂不可用</strong>
+            <p>该报价记录时间可能较久，或供应商已变更联系电话，建议转人工询价协助核验最新对接方式。</p>
+            <button class="ghost-btn supplier-contact-manual-btn" id="supplierContactManualBtn" type="button"><i data-lucide="headphones"></i>转人工询价</button>
+          </div>
+        </div>`);
+      promptInput.value = "";
+      const manualButtons = conversation.querySelectorAll(".supplier-contact-manual-btn");
+      manualButtons[manualButtons.length - 1]?.addEventListener("click", () => openManualInquiry("supplierContactManualBtn"));
+      refreshIcons();
+      setTongbaoTip("我可以帮您转人工询价，核验供应商最新联系方式～", "warning");
+      keepConversationClearOfComposer();
+    }
+
+    function handleSupplierContactFollowUp(query) {
+      if (!hasSubmittedOnce || !query) return false;
+      if (hasShownSupplierContact && supplierContactUnavailablePattern.test(query)) {
+        appendSupplierContactUnavailableReply(query);
+        return true;
+      }
+      if (supplierContactPattern.test(query)) {
+        appendSupplierContactReply(query);
+        return true;
+      }
+      return false;
+    }
+
+    function handlePriceSourceQuestion(query) {
+      if (!hasSubmittedOnce || !priceSourceQuestionPattern.test(query)) return false;
+      conversation.insertAdjacentHTML("beforeend", `<div class="user-message">${query.replace(/[<>]/g, "")}</div>`);
+      promptInput.value = "";
+      keepConversationClearOfComposer();
+      return true;
+    }
+
+    function renderInvalidInquiryConversation(query) {
+      clearModifyMode();
+      views.workspace.classList.remove("workspace-empty");
+      setWorkspaceScreen("chat");
+      conversation.innerHTML = `
+        <div class="privacy-note">您的输入将被收集用于模型训练。<button type="button">关闭</button></div>
+        <div class="user-message">${query.replace(/[<>]/g, "")}</div>
+        ${agentTurnMarkup("暂未识别为材料询价需求", "请填写材料名称，并尽量补充规格型号、数量、报价地区和目标时间。例如：PE管 DN110，4600米，广东广州，2026年9月。")}`;
+      promptInput.value = "";
+      refreshIcons();
+      setTongbaoTip("请输入材料名称、规格、数量和地区，我来为您查询报价～", "warning");
+      keepConversationClearOfComposer();
+    }
+
+    function firstSubmitMarkup() {
+      return `
+        <section class="first-submit-stage" id="firstSubmitStage" aria-live="polite">
+          <div class="first-submit-icon">
+            <img src="./assets/tongbao/poses/final-canonical/02-cheek-on-one-hand.png" alt="通宝正在准备">
+          </div>
+          <div class="first-submit-content" id="firstSubmitContent">
+            <h3>正在准备执行...</h3>
+            <p>通宝正在接收询价需求并进入工作状态<span class="first-submit-thinking-dots" aria-hidden="true">...</span></p>
+            <div class="first-submit-progress" role="progressbar" aria-label="准备进度" aria-valuemin="0" aria-valuemax="100">
+              <span></span>
+            </div>
+          </div>
+        </section>`;
+    }
+
+    function getReasoningSteps(mode = reasoningMode) {
+      if (mode === "deep") {
+        return [
+          { label: "理解材料与询价条件", status: "正在理解材料、规格与报价地区..." },
+          { label: "匹配历史询价记录", status: "正在匹配历史询价记录..." },
+          { label: "核验市场价与报价口径", status: "正在核验市场价与报价口径..." },
+          { label: "复核地区差异与价格合理性", status: "正在复核地区差异与价格合理性..." }
+        ];
+      }
+      return [
+        { label: "理解材料与询价条件", status: "正在理解材料、规格与报价地区..." },
+        { label: "匹配历史询价与市场价", status: "正在匹配历史询价与市场价..." }
+      ];
+    }
+
+    function inquiryReasoningTurnMarkup(mode = reasoningMode) {
+      const steps = getReasoningSteps(mode);
+      return `
+        <div class="agent-turn inquiry-reasoning-turn" id="inquiryReasoningTurn">
+          <div class="ai-avatar"><i data-lucide="sparkles"></i></div>
+          <div class="agent-turn-bubble inquiry-reasoning-bubble">
+            <div class="first-submit-process">
+              <div class="first-submit-process-heading">${mode === "deep" ? "深度思考" : "快速思考"}</div>
+              <p class="first-submit-process-status" id="inquiryReasoningStatus">${steps[0].status}</p>
+              <div class="first-submit-process-steps">
+                ${steps.map((step, index) => `<span class="first-submit-process-step${index === 0 ? " is-active" : ""}">${step.label}</span>`).join("")}
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function startConversationReasoning(query, outcome, mode = reasoningMode) {
+      const turn = document.getElementById("inquiryReasoningTurn");
+      if (!turn) {
+        queryTimer = null;
+        return;
+      }
+
+      const steps = getReasoningSteps(mode);
+      const stepDelay = mode === "deep" ? 650 : 400;
+      const finishDelay = mode === "deep" ? 850 : 520;
+      const status = document.getElementById("inquiryReasoningStatus");
+      const stepNodes = [...turn.querySelectorAll(".first-submit-process-step")];
+      let activeIndex = 0;
+
+      const advanceReasoning = () => {
+        stepNodes.forEach((node, index) => {
+          node.classList.toggle("is-active", index === activeIndex);
+          node.classList.toggle("is-done", index < activeIndex);
+        });
+        if (status) status.textContent = steps[activeIndex].status;
+        activeIndex += 1;
+
+        if (activeIndex < steps.length) {
+          queryTimer = window.setTimeout(advanceReasoning, stepDelay);
+          return;
+        }
+
+        queryTimer = window.setTimeout(() => {
+          queryTimer = null;
+          renderInquiryOutcome(query, outcome);
+        }, finishDelay);
+      };
+
+      advanceReasoning();
+    }
+
+    function bindNoDataActions() {
+      document.getElementById("noDataManualBtn")?.addEventListener("click", () => openManualInquiry("noDataManualBtn"));
+      document.getElementById("noDataTimeBtn")?.addEventListener("click", () => {
+        enterModifyMode(null, "请调整目标时间后重新提交");
+      });
+      document.getElementById("noDataRegionBtn")?.addEventListener("click", () => {
+        enterModifyMode(null, "请扩大报价区域后重新提交");
+      });
+    }
+
+    function bindIncompleteSpecActions() {
+      const panel = document.getElementById("incompleteChoicePanel");
+      if (!panel) {
+        document.getElementById("incompleteManualBtn")?.addEventListener("click", () => openManualInquiry("incompleteManualBtn"));
+        return;
+      }
+
+      const title = document.querySelector(".inquiry-choice-head strong");
+      const page = document.getElementById("incompleteChoicePage");
+      const previousBtn = document.getElementById("incompletePrevBtn");
+      const list = document.querySelector(".inquiry-choice-list");
+      const status = document.getElementById("incompleteChoiceStatus");
+      const sendBtn = document.getElementById("confirmIncompleteChoiceBtn");
+      const typeChoices = {
+        diameter: {
+          label: "规格型号 / 公称直径 DN",
+          title: "请选择公称直径",
+          options: ["DN50", "DN80", "DN110", "DN1200"]
+        },
+        pressure: {
+          label: "压力等级 PN / 适用工况",
+          title: "请选择压力等级",
+          options: ["PN10", "PN16", "PN25", "PN40"]
+        },
+        material: {
+          label: "阀体材质 / 连接方式",
+          title: "请选择材质与连接方式",
+          options: ["铸钢 / 法兰连接", "不锈钢 / 法兰连接", "铸钢 / 螺纹连接", "按原图纸执行"]
+        },
+        brand: {
+          label: "品牌要求 / 适用工况",
+          title: "请选择品牌与工况",
+          options: ["国标产品 / 常温清水", "国标产品 / 腐蚀性介质", "无品牌要求 / 常温清水", "其他工况要求"]
+        }
+      };
+      let currentStep = "type";
+      let selectedType = null;
+      let selectedValue = null;
+
+      function renderChoiceRows(rows) {
+        list.innerHTML = rows.map((option, index) => {
+          const value = typeof option === "string" ? option : option.value;
+          const label = typeof option === "string" ? option : option.label;
+          const selected = selectedValue === value;
+          return `
+            <button class="inquiry-choice-item${selected ? " is-selected" : ""}" type="button" role="option" aria-pressed="${String(selected)}" data-choice-value="${value}">
+              <span class="choice-index">${index + 1}</span>
+              <span>${label}</span>
+              <i data-lucide="arrow-right"></i>
+            </button>`;
+        }).join("");
+        refreshIcons();
+      }
+
+      function renderChoiceStep() {
+        if (currentStep === "type") {
+          title.textContent = "需要补充哪项关键规格？";
+          page.textContent = "1/2";
+          previousBtn.disabled = true;
+          status.textContent = "等待用户确认";
+          status.classList.remove("has-selection");
+          sendBtn.disabled = true;
+          renderChoiceRows(Object.entries(typeChoices).map(([value, item]) => ({ value, label: item.label })));
+          return;
+        }
+
+        const type = typeChoices[selectedType];
+        title.textContent = type.title;
+        page.textContent = "2/2";
+        previousBtn.disabled = false;
+        sendBtn.disabled = !selectedValue;
+        if (selectedValue) {
+          status.textContent = `等待用户确认 · ${selectedValue}`;
+          status.classList.add("has-selection");
+        } else {
+          status.textContent = `已选择：${type.label}，请继续选择`;
+          status.classList.remove("has-selection");
+        }
+        renderChoiceRows(type.options);
+      }
+
+      list.addEventListener("click", (event) => {
+        const optionButton = event.target.closest(".inquiry-choice-item");
+        if (!optionButton) return;
+        const value = optionButton.dataset.choiceValue;
+        if (currentStep === "type") {
+          selectedType = value;
+          selectedValue = null;
+          currentStep = "value";
+          renderChoiceStep();
+          setTongbaoTip(`已选择${typeChoices[selectedType].label}，请继续选择具体值～`);
+          return;
+        }
+        selectedValue = value;
+        renderChoiceStep();
+        setTongbaoTip(`已选择 ${selectedValue}，确认无误后点击发送继续查询～`);
+      });
+
+      previousBtn.addEventListener("click", () => {
+        if (currentStep !== "value") return;
+        currentStep = "type";
+        selectedType = null;
+        selectedValue = null;
+        renderChoiceStep();
+      });
+
+      sendBtn.addEventListener("click", () => {
+        if (!selectedType || !selectedValue) return;
+        const baseQuery = conversation.querySelector(".user-message")?.textContent.trim() || "特种调节阀，数量2台";
+        const type = typeChoices[selectedType];
+        runInquiry(`${baseQuery}，${type.label}：${selectedValue}`, {
+          skipSpecConfirmation: true,
+          actionLabel: "补充规格查询"
+        });
+      });
+
+      document.getElementById("closeIncompleteChoiceBtn")?.addEventListener("click", () => {
+        panel.hidden = true;
+        showToast("已关闭补充选择");
+        setTongbaoTip("已关闭选择栏，可以直接在输入框补充关键规格～");
+      });
+      document.getElementById("incompleteOtherBtn")?.addEventListener("click", () => {
+        panel.hidden = true;
+        enterModifyMode(null, "请在输入框中补充规格型号、压力等级、材质或连接方式");
+      });
+      document.getElementById("incompleteManualBtn")?.addEventListener("click", () => openManualInquiry("incompleteManualBtn"));
+      renderChoiceStep();
+    }
+
+    function openManualInquiry(buttonId) {
+      manualSourceButtonId = buttonId;
+      const query = conversation.querySelector(".user-message")?.textContent.trim();
+      const summary = document.getElementById("manualMaterialSummary");
+      if (summary) {
+        summary.textContent = query
+          ? `本次询价：${query}`
+          : "本次询价：特种调节阀 · 规格待确认 · 数量2台 · 报价区域广东广州";
+      }
+      document.getElementById("manualInquiryModal")?.classList.add("open");
+      document.getElementById("manualModalBackdrop")?.classList.add("open");
+      setTongbaoTip("请补充联系方式和报价要求，提交后我会帮您跟踪受理进度～");
+      window.setTimeout(() => document.getElementById("manualContact")?.focus(), 80);
+    }
+
+    function closeManualInquiry() {
+      document.getElementById("manualInquiryModal")?.classList.remove("open");
+      document.getElementById("manualModalBackdrop")?.classList.remove("open");
+    }
+
+    function manualCaseMarkup(quoteBasis, sla) {
+      return `
+        <div class="manual-case-card" id="manualCaseCard">
+          <div class="manual-case-head">
+            <strong>人工询价已提交</strong>
+            <span class="case-status">待受理</span>
+          </div>
+          <div class="manual-case-grid">
+            <div><span>询价单号</span><strong>RG20260915001</strong></div>
+            <div><span>预计响应</span><strong>${sla}</strong></div>
+            <div><span>报价口径</span><strong>${quoteBasis}</strong></div>
+          </div>
+          <div class="case-timeline">
+            <span class="done">已提交</span>
+            <span class="current">待受理</span>
+            <span>处理中</span>
+            <span>已回复</span>
+          </div>
+        </div>`;
+    }
+
+    function submitManualInquiryForm(event) {
+      event.preventDefault();
+      const formData = new FormData(event.currentTarget);
+      const quoteBasis = formData.get("quoteBasis") || "含税含运费";
+      const sla = formData.get("sla") || "2个工作小时内";
+      conversation.insertAdjacentHTML("beforeend", `
+        <div class="agent-turn" id="manualInquiryConfirm">
+          <div class="ai-avatar"><i data-lucide="sparkles"></i></div>
+          <div class="agent-turn-bubble">
+            <strong>已转人工询价</strong>
+            <p>询价需求已提交，工作人员将根据材料明细和报价要求进一步核实，并反馈可用供应商及报价结果。</p>
+          </div>
+        </div>
+        ${manualCaseMarkup(quoteBasis, sla)}`);
+      const manualButton = document.getElementById(manualSourceButtonId);
+      if (manualButton) {
+        manualButton.disabled = true;
+        manualButton.innerHTML = `<i data-lucide="check"></i>已转人工询价`;
+      }
+      closeManualInquiry();
+      document.getElementById("manualInquiryForm")?.reset();
+      refreshIcons();
+      showToast("已提交人工询价");
+      setTongbaoTip("人工询价已提交，我会继续帮你关注工作人员的处理进度～", "success");
+      keepConversationClearOfComposer();
+    }
+
+    function renderNoDataConversation(query) {
+      clearModifyMode();
+      views.workspace.classList.remove("workspace-empty");
+      setWorkspaceScreen("chat");
+      conversation.innerHTML = `
+        <div class="privacy-note">您的输入将被收集用于模型训练。<button type="button">关闭</button></div>
+        <div class="user-message">${query}</div>
+        ${agentTurnMarkup("已识别询价条件", "材料：特种调节阀 · 规格：DN1200 · 数量：2台 · 报价区域：广东广州")}
+        ${agentTurnMarkup("历史询价未命中，已切换市场价", "目标时间可能较早，或暂时超出数据库可查询范围。正在继续尝试市场价数据源。")}
+        ${noDataMarkup()}`;
+      bindNoDataActions();
+      refreshIcons();
+      setTongbaoTip("这次没找到完全匹配记录，可以调整时间、扩大报价区域，或转人工询价～", "warning");
+      keepConversationClearOfComposer();
+    }
+
+    function renderIncompleteSpecConversation(query) {
+      clearModifyMode();
+      views.workspace.classList.remove("workspace-empty");
+      setWorkspaceScreen("chat");
+      conversation.innerHTML = `
+        <div class="privacy-note">您的输入将被收集用于模型训练。<button type="button">关闭</button></div>
+        <div class="user-message">${query}</div>
+        ${agentTurnMarkup("已识别询价条件", "材料：特种调节阀 · 数量：2台 · 报价区域：广东广州")}
+        ${agentTurnMarkup("缺少关键规格，暂时无法匹配", "当前仅有材料名称和数量，缺少规格型号、压力等级或连接方式等必要信息。")}
+        ${incompleteSpecMarkup()}`;
+      bindIncompleteSpecActions();
+      refreshIcons();
+      setTongbaoTip("还缺关键规格，补充型号、压力等级或连接方式后，我就能继续查～", "warning");
+      keepConversationClearOfComposer();
+    }
+
+    function bindSpecConfirmationActions(query) {
+      document.getElementById("confirmSpecQueryBtn")?.addEventListener("click", () => {
+        runInquiry(query, {
+          skipSpecConfirmation: true,
+          actionLabel: "确认查询"
+        });
+      });
+      document.getElementById("continueSpecEditBtn")?.addEventListener("click", () => {
+        enterModifyMode(query, "可继续调整规格和询价条件");
+      });
+    }
+
+    function renderSpecConfirmation(query) {
+      clearModifyMode();
+      views.workspace.classList.remove("workspace-empty");
+      setWorkspaceScreen("chat");
+      conversation.innerHTML = `
+        <div class="privacy-note">您的输入将被收集用于模型训练。<button type="button">关闭</button></div>
+        <div class="user-message">${query}</div>
+        ${agentTurnMarkup("已补充询价规格", "我会先核对关键字段，确认无误后再查询历史询价和市场价。")}
+        ${specConfirmationMarkup(query)}`;
+      bindSpecConfirmationActions(query);
+      refreshIcons();
+      setTongbaoTip("规格已经补齐，确认查询条件后我就开始重新匹配～");
+      keepConversationClearOfComposer();
+    }
+
+    function showNoDataCase() {
+      const query = "广东广州，2026年9月，特种调节阀 DN1200，数量2台";
+      renderNoDataConversation(query);
+    }
+
+    function bindResultActions() {
+      const exportBtn = document.getElementById("exportBtn");
+      const modifyBtn = document.getElementById("modifyBtn");
+      const retryBtn = document.getElementById("retryBtn");
+      const copyResultBtn = document.getElementById("copyResultBtn");
+      const resultManualInquiryBtn = document.getElementById("resultManualInquiryBtn");
+
+      if (exportBtn) {
+        exportBtn.addEventListener("click", () => {
+          setView("preview");
+          refreshIcons();
+        });
+      }
+
+      if (modifyBtn) {
+        modifyBtn.addEventListener("click", enterModifyMode);
+      }
+
+      if (retryBtn) {
+        retryBtn.addEventListener("click", () => {
+          const currentText = conversation.querySelector(".user-message")?.textContent || "";
+          runInquiry(currentText || document.getElementById("homeQuery").value, {
+            actionLabel: "重新询价"
+          });
+        });
+      }
+
+      if (copyResultBtn) {
+        copyResultBtn.addEventListener("click", async () => {
+          const prices = currentRecommendations.map((record) => Number(record.suggestedPrice));
+          const minPrice = Math.min(...prices).toFixed(2);
+          const maxPrice = Math.max(...prices).toFixed(2);
+          const unit = currentRecommendations[0]?.unit || "m";
+          const resultText = [
+            "询价建议结果",
+            `建议价区间：¥${minPrice} - ¥${maxPrice} / ${unit}（含税13%，含运费）`,
+            ...currentRecommendations.map((record) => `${record.supplier}：¥${record.suggestedPrice} / ${record.unit}`)
+          ].join("\n");
+          try {
+            await copyTextToClipboard(resultText);
+            showToast("询价建议已复制");
+            setTongbaoTip("询价建议已复制，可以直接粘贴到沟通内容中～", "success");
+          } catch {
+            showToast("复制失败，请手动复制");
+          }
+        });
+      }
+
+      document.querySelectorAll("[data-result-feedback]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const shouldActivate = !button.classList.contains("is-active");
+          document.querySelectorAll("[data-result-feedback]").forEach((item) => {
+            item.classList.remove("is-active");
+            item.setAttribute("aria-pressed", "false");
+          });
+          if (!shouldActivate) {
+            showToast("已取消反馈");
+            return;
+          }
+          button.classList.add("is-active");
+          button.setAttribute("aria-pressed", "true");
+          const isLike = button.dataset.resultFeedback === "like";
+          showToast(isLike ? "感谢您的认可" : "已收到您的反馈");
+          setTongbaoTip(isLike ? "感谢认可，我会继续帮您筛选更合适的报价～" : "已收到反馈，您可以修改条件后重新查询～");
+        });
+      });
+
+      if (resultManualInquiryBtn) {
+        resultManualInquiryBtn.addEventListener("click", () => openManualInquiry("resultManualInquiryBtn"));
+      }
+      refreshIcons();
+      setTongbaoTip(
+        `已匹配到 ${currentRecommendations.length} 条候选报价，建议结合地区、时间和含税条件复核～`,
+        currentRecommendations.length < 3 ? "warning" : "success"
+      );
+      keepConversationClearOfComposer();
+    }
+
+    function renderInquiryOutcome(query, outcome) {
+      if (outcome === "incomplete") {
+        renderIncompleteSpecConversation(query);
+        keepConversationClearOfComposer();
+        return;
+      }
+      if (outcome === "noData") {
+        renderNoDataConversation(query);
+        keepConversationClearOfComposer();
+        return;
+      }
+      conversation.innerHTML = `
+        <div class="privacy-note">您的输入将被收集用于模型训练。<button type="button">关闭</button></div>
+        <div class="user-message">${query.replace(/[<>]/g, "")}</div>
+        ${resultMarkup(query)}`;
+      bindResultActions();
+      keepConversationClearOfComposer();
+    }
+
+    function runInquiry(text, options = {}) {
+      const inputText = String(text || "").trim();
+      if (inputText && !materialInquiryPattern.test(inputText)) {
+        renderInvalidInquiryConversation(inputText);
+        return;
+      }
+      const query = inputText || "广东广州，2026年9月，供水管 PE管DN110，数量4600米";
+      const isIncompleteSpec = incompleteSpecPattern.test(query) && !specTokenPattern.test(query);
+      const outcome = isIncompleteSpec ? "incomplete" : noDataQueryPattern.test(query) ? "noData" : "result";
+
+      if (options.confirmEditedSpec && !options.skipSpecConfirmation && noDataQueryPattern.test(query)) {
+        renderSpecConfirmation(query);
+        return;
+      }
+
+      if (!isIncompleteSpec && options.charge !== false && !consumeQueryCredit(options.actionLabel || "本次查询")) return;
+      const isFirstSubmit = !hasSubmittedOnce && options.charge !== false;
+      const queryReasoningMode = reasoningMode;
+      hasShownSupplierContact = false;
+      if (isFirstSubmit) hasSubmittedOnce = true;
+      clearModifyMode();
+      views.workspace.classList.remove("workspace-empty");
+      setWorkspaceScreen("chat");
+      window.clearTimeout(queryTimer);
+      queryTimer = null;
+
+      if (isFirstSubmit) {
+        setTongbaoTip("收到，我先准备一下，马上开始识别询价条件～");
+        conversation.innerHTML = `
+          <div class="privacy-note">您的输入将被收集用于模型训练。<button type="button">关闭</button></div>
+          <div class="user-message">${query.replace(/[<>]/g, "")}</div>
+          ${firstSubmitMarkup()}`;
+        queryTimer = window.setTimeout(() => {
+          const stage = document.getElementById("firstSubmitStage");
+          if (!stage) {
+            queryTimer = null;
+            return;
+          }
+          stage.outerHTML = inquiryReasoningTurnMarkup(queryReasoningMode);
+          refreshIcons();
+          startConversationReasoning(query, outcome, queryReasoningMode);
+        }, 1720);
+      } else {
+        setTongbaoTip("收到，我先识别材料条件，再优先查找历史询价～");
+        conversation.innerHTML = `
+          <div class="privacy-note">您的输入将被收集用于模型训练。<button type="button">关闭</button></div>
+          <div class="user-message">${query.replace(/[<>]/g, "")}</div>
+          ${inquiryReasoningTurnMarkup(queryReasoningMode)}`;
+        refreshIcons();
+        startConversationReasoning(query, outcome, queryReasoningMode);
+      }
+      refreshIcons();
+      const input = document.getElementById("promptInput");
+      if (input) input.value = "";
+    }
+
+    function resetChat() {
+      window.clearTimeout(queryTimer);
+      queryTimer = null;
+      hasSubmittedOnce = false;
+      hasShownSupplierContact = false;
+      clearModifyMode();
+      closeManualInquiry();
+      selectComposerMode("AI询价", { showChip: false });
+      setWorkspaceScreen("chat");
+      chatScreen.scrollTop = 0;
+      views.workspace.classList.add("workspace-empty");
+      conversation.innerHTML = `
+        <div class="empty-chat">
+          <div class="empty-chat-copy">
+            <h1>Building D.S.</h1>
+            <p>我可以帮你搜索、询价、数智材价报告，请把你的任务交给我吧~</p>
+          </div>
+        </div>`;
+      promptInput.value = "";
+      refreshIcons();
+      setTongbaoTip("您好，我是通宝。告诉我材料名称、规格、数量和地区，我来帮你匹配报价～");
+      window.setTimeout(() => document.getElementById("promptInput")?.focus(), 60);
+    }
+
+    function renderHistoryResult(query) {
+      clearModifyMode();
+      views.workspace.classList.remove("workspace-empty");
+      setWorkspaceScreen("chat");
+      conversation.innerHTML = `
+        <div class="privacy-note">您的输入将被收集用于模型训练。<button type="button">关闭</button></div>
+        <div class="user-message">${query.replace(/[<>]/g, "")}</div>
+        ${resultMarkup(query)}`;
+      bindResultActions();
+      setTongbaoTip("这是历史询价结果，您可以查看报价或修改条件后重新查询～");
+    }
+
+    function openRules() {
+      rulesDrawer.classList.add("open");
+      drawerBackdrop.classList.add("open");
+    }
+
+    function closeRules() {
+      rulesDrawer.classList.remove("open");
+      drawerBackdrop.classList.remove("open");
+    }
+
+    function setContactVisibility(show) {
+      document.querySelectorAll(".contact-detail").forEach((node) => node.classList.toggle("hidden", !show));
+    }
+
+    function closeReasoningModeMenu() {
+      document.getElementById("reasoningModeMenu")?.classList.add("hidden");
+      document.getElementById("reasoningModeBtn")?.setAttribute("aria-expanded", "false");
+    }
+
+    function setReasoningMode(mode, options = {}) {
+      const selectedMode = mode === "deep" ? "deep" : "fast";
+      reasoningMode = selectedMode;
+      const label = document.getElementById("reasoningModeLabel");
+      const tag = document.getElementById("reasoningModeTag");
+      const button = document.getElementById("reasoningModeBtn");
+      const icon = document.getElementById("reasoningModeIcon");
+
+      if (label) label.textContent = selectedMode === "deep" ? "深度思考" : "快速思考";
+      if (tag) tag.hidden = selectedMode !== "fast";
+      if (button) button.title = selectedMode === "deep" ? "当前为深度思考模式" : "当前为快速思考模式";
+      if (icon) {
+        icon.outerHTML = `<i id="reasoningModeIcon" data-lucide="${selectedMode === "deep" ? "brain" : "zap"}"></i>`;
+      }
+      document.querySelectorAll(".reasoning-mode-option").forEach((option) => {
+        const isActive = option.dataset.reasoningMode === selectedMode;
+        option.classList.toggle("active", isActive);
+        option.setAttribute("aria-checked", String(isActive));
+      });
+      refreshIcons();
+
+      if (options.announce !== false) {
+        showToast(selectedMode === "deep" ? "已切换到深度思考模式" : "已切换到快速思考模式");
+        setTongbaoTip(selectedMode === "deep"
+          ? "深度思考已启用，我会补充地区差异和价格合理性复核～"
+          : "快速思考已启用，我会更快返回询价结果～");
+      }
+    }
+
+    function setComposerModeChip(mode, visible = true) {
+      const isPriceCheck = mode === "AI查价";
+      composerModeLabel.textContent = isPriceCheck ? "AI 查价" : "AI 询价";
+      composerModePriceIcon.classList.toggle("hidden", !isPriceCheck);
+      composerModeInquiryIcon.classList.toggle("hidden", isPriceCheck);
+      clearComposerModeBtn.title = `关闭 ${isPriceCheck ? "AI 查价" : "AI 询价"}`;
+      composerModeChip.classList.toggle("hidden", !visible);
+    }
+
+    function selectComposerMode(mode, options = {}) {
+      document.querySelectorAll(".composer-mode").forEach((button) => {
+        const selected = button.dataset.mode === mode;
+        button.classList.toggle("active", selected);
+        button.setAttribute("aria-pressed", String(selected));
+        if (selected && button.dataset.placeholder) {
+          promptInput.placeholder = button.dataset.placeholder;
+        }
+      });
+      setComposerModeChip(mode, options.showChip !== false);
+      setTongbaoTip(mode === "AI查价"
+        ? "输入材料名称或关键词，我来帮你查市场价、信息价和综合价～"
+        : "告诉我材料名称、规格、数量和地区，我来帮你匹配报价～");
+      if (mode === "AI查价") {
+        window.setTimeout(() => promptInput.focus(), 0);
+      }
+    }
+
+    document.getElementById("openInquiryBtn").addEventListener("click", () => {
+      resetChat();
+    });
+
+    document.getElementById("openPriceCheckBtn").addEventListener("click", () => {
+      showToast("AI 查价为现有能力，可查询市场价、信息价和综合价");
+    });
+
+    document.getElementById("homeSearchBtn").addEventListener("click", () => {
+      showToast("普通搜索为现有查价能力，本 Demo 聚焦 AI 询价");
+    });
+
+    document.getElementById("backHomeBtn").addEventListener("click", () => setView("home"));
+    document.getElementById("newChatBtn").addEventListener("click", resetChat);
+    document.getElementById("historyNewBtn").addEventListener("click", resetChat);
+    document.getElementById("openRulesBtn").addEventListener("click", openRules);
+    document.getElementById("closeRulesBtn").addEventListener("click", closeRules);
+    drawerBackdrop.addEventListener("click", closeRules);
+
+    document.querySelectorAll("[data-nav]").forEach((button) => {
+      button.addEventListener("click", () => {
+        if (button.dataset.nav === "history") {
+          setWorkspaceScreen("history");
+        } else {
+          renderHistoryResult(button.dataset.historyQuery || "广东广州，2026年9月，供水管 PE管DN110，数量4600米");
+        }
+      });
+    });
+
+    document.querySelectorAll("[data-history-view]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const historyQueries = {
+          pe: "广东广州，2026年9月，供水管 PE管DN110，数量4600米",
+          membrane: "广东广州，2026年9月，超滤膜设备，数量1套",
+          cement: "广东广州，2026年9月，普通硅酸盐水泥 P.O42.5，数量200吨",
+          rebar: "广东广州，2026年9月，螺纹钢 HRB400E Φ20，数量85吨",
+          concrete: "广东广州，2026年9月，预拌混凝土 C30，数量180m³",
+          fitting: "广东中山，2026年9月，PE直通管件PE110，数量650个"
+        };
+        if (button.dataset.historyView === "incomplete") {
+          renderIncompleteSpecConversation("广东广州，2026年9月，特种调节阀，数量2台");
+          return;
+        }
+        if (button.dataset.historyView === "empty") {
+          showNoDataCase();
+          return;
+        }
+        const historyQuery = historyQueries[button.dataset.historyView];
+        if (historyQuery) {
+          renderHistoryResult(historyQuery);
+        } else {
+          setWorkspaceScreen("chat");
+        }
+        showToast("已加载历史询价结果");
+      });
+    });
+
+    document.getElementById("closePreviewBtn").addEventListener("click", () => setView("workspace"));
+    document.getElementById("printPreviewBtn").addEventListener("click", () => {
+      showToast("原型演示：已生成带询价专用章的报价文件");
+    });
+    contactToggle.addEventListener("change", (event) => {
+      setContactVisibility(event.target.checked);
+    });
+
+    document.getElementById("manualCloseBtn").addEventListener("click", closeManualInquiry);
+    document.getElementById("manualCancelBtn").addEventListener("click", closeManualInquiry);
+    document.getElementById("manualModalBackdrop").addEventListener("click", closeManualInquiry);
+    document.getElementById("manualInquiryForm").addEventListener("submit", submitManualInquiryForm);
+
+    document.getElementById("voiceBtn").addEventListener("click", () => {
+      showToast("语音输入能力待接入");
+    });
+
+    document.getElementById("reasoningModeBtn")?.addEventListener("click", () => {
+      const menu = document.getElementById("reasoningModeMenu");
+      const button = document.getElementById("reasoningModeBtn");
+      if (!menu || !button) return;
+      const willOpen = menu.classList.contains("hidden");
+      menu.classList.toggle("hidden", !willOpen);
+      button.setAttribute("aria-expanded", String(willOpen));
+    });
+
+    document.querySelectorAll(".reasoning-mode-option").forEach((option) => {
+      option.addEventListener("click", () => {
+        setReasoningMode(option.dataset.reasoningMode);
+        closeReasoningModeMenu();
+      });
+    });
+
+    document.addEventListener("click", (event) => {
+      if (!event.target.closest("#reasoningModeWrap")) closeReasoningModeMenu();
+    });
+
+    document.getElementById("composerCalendarBtn")?.addEventListener("click", () => {
+      showToast("请补充目标时间，如“2026年9月”");
+    });
+
+    document.getElementById("composerRegionBtn")?.addEventListener("click", () => {
+      showToast("请补充报价地区，如“广东广州”");
+    });
+
+    document.getElementById("composerSymbolBtn")?.addEventListener("click", () => {
+      showToast("符号输入面板待接入");
+    });
+
+    document.getElementById("composerVoiceBtn")?.addEventListener("click", () => {
+      showToast("语音输入能力待接入");
+      setTongbaoTip("语音输入待接入，可以先用文字告诉我材料、规格和地区～");
+    });
+
+    document.querySelectorAll(".composer-mode").forEach((button) => {
+      button.addEventListener("click", () => {
+        selectComposerMode(button.dataset.mode);
+      });
+    });
+
+    clearComposerModeBtn.addEventListener("click", () => {
+      selectComposerMode("AI询价", { showChip: false });
+      setTongbaoTip("已切回 AI 询价，继续输入询价条件吧～");
+    });
+
+    document.getElementById("modifyBtn")?.addEventListener("click", enterModifyMode);
+
+    document.getElementById("exportBtn")?.addEventListener("click", () => {
+      setView("preview");
+      refreshIcons();
+    });
+
+    document.getElementById("retryBtn")?.addEventListener("click", () => {
+      runInquiry(document.getElementById("homeQuery").value, {
+        actionLabel: "重新询价"
+      });
+    });
+
+    const composer = document.getElementById("composer");
+    composer.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (document.querySelector(".composer-mode.active")?.dataset.mode === "AI查价") {
+        showToast("AI 查价为现有能力，可查询市场价、信息价和综合价");
+        setTongbaoTip("当前先为您接入 AI 查价，可以查询市场价、信息价和综合价～");
+        return;
+      }
+      const prompt = document.getElementById("promptInput").value;
+      if (handlePriceSourceQuestion(prompt)) return;
+      if (handleSupplierContactFollowUp(prompt)) return;
+      runInquiry(prompt, {
+        confirmEditedSpec: composerShell.classList.contains("editing"),
+        actionLabel: "本次查询"
+      });
+    });
+
+    document.getElementById("promptInput").addEventListener("input", updateComposerTipFromInput);
+
+    document.getElementById("promptInput").addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        composer.requestSubmit();
+      }
+    });
+
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        closeRules();
+        closeManualInquiry();
+        closeReasoningModeMenu();
+      }
+    });
+
+    window.addEventListener("resize", updateWorkspaceScrollbarOffset);
+
+    setReasoningMode("fast", { announce: false });
+    refreshIcons();
+  </script>
+</body>
+</html>

@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>询价盖章报价文件</title>
+  <style>
+    :root {
+      --brand: #0b6fe8;
+      --ink: #18324f;
+      --ink-strong: #102a43;
+      --muted: #667b95;
+      --line: #dbe4ef;
+      --line-strong: #c8d5e4;
+      --canvas: #e8edf4;
+      --paper: #ffffff;
+      --radius: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: var(--canvas);
+      color: var(--ink);
+      font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+      font-size: 14px;
+      letter-spacing: 0;
+    }
+
+    button {
+      cursor: pointer;
+      font: inherit;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .preview-toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      min-height: 60px;
+      padding: 10px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.97);
+      backdrop-filter: blur(10px);
+    }
+
+    .toolbar-left,
+    .preview-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .toolbar-title {
+      color: var(--ink-strong);
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .approval-note {
+      padding: 5px 9px;
+      border: 1px solid #f0cf9a;
+      border-radius: 6px;
+      background: #fff8ea;
+      color: #8a5709;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .ghost-btn,
+    .primary-btn,
+    .contact-toggle {
+      height: 38px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      border-radius: var(--radius);
+      padding: 0 13px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .ghost-btn,
+    .contact-toggle {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+    }
+
+    .primary-btn {
+      border: 1px solid var(--brand);
+      background: var(--brand);
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .contact-toggle input {
+      accent-color: var(--brand);
+    }
+
+    .a4-stage {
+      width: min(880px, calc(100% - 32px));
+      margin: 26px auto 48px;
+    }
+
+    .a4-paper {
+      position: relative;
+      width: 100%;
+      min-height: 1120px;
+      padding: 34px 30px 42px;
+      background: var(--paper);
+      box-shadow: 0 18px 45px rgba(31, 54, 82, 0.18);
+      overflow: hidden;
+    }
+
+    .paper-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .paper-watermark {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      color: rgba(11, 111, 232, 0.06);
+      font-size: 74px;
+      font-weight: 900;
+      letter-spacing: 14px;
+      pointer-events: none;
+      transform: rotate(-28deg);
+      white-space: nowrap;
+    }
+
+    .paper-watermark::after {
+      position: absolute;
+      content: "造价通 · AI询价";
+      color: rgba(11, 111, 232, 0.045);
+      font-size: 54px;
+      transform: translate(220px, 260px) rotate(58deg);
+    }
+
+    .a4-paper > *:not(.paper-watermark) {
+      position: relative;
+      z-index: 2;
+    }
+
+    .paper-logo {
+      display: block;
+      width: 148px;
+      height: auto;
+    }
+
+    .paper-logo img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .paper-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    .paper-table th,
+    .paper-table td {
+      padding: 10px 7px;
+      border: 1px solid #b8c2ce;
+      color: #1f2937;
+      font-size: 11px;
+      text-align: center;
+      word-break: break-word;
+    }
+
+    .paper-table th {
+      background: #fff;
+      color: #111827;
+      font-size: 12px;
+    }
+
+    .paper-table .material-cell {
+      font-weight: 700;
+    }
+
+    .contact-detail.hidden {
+      display: none;
+    }
+
+    .paper-ai-note {
+      position: relative;
+      z-index: 2;
+      margin: 18px 0 0;
+      padding-top: 10px;
+      border-top: 1px dashed var(--line-strong);
+      color: #65758a;
+      font-size: 11px;
+      text-align: center;
+    }
+
+    .seal {
+      position: absolute;
+      left: 190px;
+      top: 98px;
+      width: 155px;
+      height: 155px;
+      border: 5px solid rgba(211, 43, 43, 0.86);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: rgba(211, 43, 43, 0.88);
+      font-family: "Songti SC", "SimSun", serif;
+      font-weight: 800;
+      text-align: center;
+      transform: rotate(-15deg);
+      pointer-events: none;
+      z-index: 3;
+      mix-blend-mode: multiply;
+    }
+
+    .seal::before {
+      content: "★";
+      position: absolute;
+      font-size: 48px;
+      color: rgba(211, 43, 43, 0.82);
+    }
+
+    .seal span {
+      position: absolute;
+      width: 94px;
+      font-size: 14px;
+      line-height: 1.2;
+    }
+
+    .seal span:first-child {
+      top: 23px;
+      left: 27px;
+    }
+
+    .seal span:last-child {
+      bottom: 20px;
+      left: 27px;
+    }
+
+    .paper-footer {
+      position: absolute;
+      left: 30px;
+      right: 30px;
+      bottom: 24px;
+      height: 48px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      color: #111827;
+      font-size: 15px;
+    }
+
+    @media (max-width: 760px) {
+      .preview-toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .preview-actions {
+        width: 100%;
+        flex-wrap: wrap;
+      }
+
+      .a4-stage {
+        width: calc(100% - 20px);
+        margin-top: 14px;
+      }
+
+      .a4-paper {
+        min-height: 980px;
+        padding: 24px 14px 40px;
+      }
+
+      .paper-table {
+        min-width: 760px;
+      }
+
+      .seal {
+        left: 105px;
+        top: 100px;
+        width: 130px;
+        height: 130px;
+      }
+    }
+
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 0;
+      }
+
+      body {
+        background: #fff;
+      }
+
+      .preview-toolbar {
+        display: none;
+      }
+
+      .a4-stage {
+        width: 100%;
+        margin: 0;
+      }
+
+      .a4-paper {
+        width: 100%;
+        min-height: 0;
+        padding: 30px 26px 40px;
+        box-shadow: none;
+      }
+
+      .paper-table {
+        min-width: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="preview-toolbar">
+    <div class="toolbar-left">
+      <button class="ghost-btn" id="closePreviewBtn" type="button">
+        <i data-lucide="x"></i>
+        关闭窗口
+      </button>
+      <span class="toolbar-title">询价盖章报价文件</span>
+    </div>
+    <div class="preview-actions">
+      <span class="approval-note">盖章生成方式待领导批示</span>
+      <label class="contact-toggle">
+        <input id="contactToggle" type="checkbox">
+        显示联系方式
+      </label>
+      <button class="primary-btn" id="printPreviewBtn" type="button">
+        <i data-lucide="download"></i>
+        下载PDF报价文件
+      </button>
+    </div>
+  </header>
+
+  <main class="a4-stage">
+    <article class="a4-paper" id="a4Paper">
+      <div class="paper-header">
+        <div class="paper-logo">
+          <img src="./assets/brand/zjtcn-logo.png" alt="造价通">
+        </div>
+      </div>
+      <div class="paper-watermark" aria-hidden="true">造价通</div>
+
+      <div class="table-wrap">
+        <table class="paper-table">
+          <colgroup>
+            <col style="width: 12%">
+            <col style="width: 19%">
+            <col style="width: 9%">
+            <col style="width: 8%">
+            <col style="width: 9%">
+            <col style="width: 11%">
+            <col style="width: 20%">
+            <col style="width: 12%">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>材料名称</th>
+              <th>规格型号</th>
+              <th>数量</th>
+              <th>单位</th>
+              <th>品牌</th>
+              <th>价格</th>
+              <th>供应商信息</th>
+              <th>回复备注</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="material-cell" rowspan="3">供水管</td>
+              <td rowspan="3">PE管DN110</td>
+              <td rowspan="3">4600</td>
+              <td rowspan="3">m</td>
+              <td rowspan="3">-</td>
+              <td>25.05</td>
+              <td><span class="supplier-name">江西台海管业有限公司</span><br><span class="contact-detail hidden">章经理 13698040607</span></td>
+              <td>报价已含税运<br>（含税13%）</td>
+            </tr>
+            <tr>
+              <td>26.36</td>
+              <td><span class="supplier-name">江西冉升管业有限公司</span><br><span class="contact-detail hidden">刘经理 18179056168</span></td>
+              <td>报价已含税运<br>（含税13%）</td>
+            </tr>
+            <tr>
+              <td>27.14</td>
+              <td><span class="supplier-name">江西鹏欣塑业有限公司</span><br><span class="contact-detail hidden">李先生 18970022833</span></td>
+              <td>报价已含税运<br>（含税13%）</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="seal" aria-label="询价专用章">
+        <span>广东造价通科技<br>股份有限公司</span>
+        <span>询价专用章</span>
+      </div>
+      <p class="paper-ai-note">该文件由 AI 生成，仅供报价参考。</p>
+      <div class="paper-footer">1</div>
+    </article>
+  </main>
+
+  <script src="./vendor/lucide.min.js"></script>
+  <script>
+    const contactToggle = document.getElementById("contactToggle");
+    const printPreviewBtn = document.getElementById("printPreviewBtn");
+    const closePreviewBtn = document.getElementById("closePreviewBtn");
+
+    function refreshIcons() {
+      if (window.lucide) window.lucide.createIcons();
+    }
+
+    contactToggle.addEventListener("change", (event) => {
+      document.querySelectorAll(".contact-detail").forEach((node) => {
+        node.classList.toggle("hidden", !event.target.checked);
+      });
+    });
+
+    printPreviewBtn.addEventListener("click", () => window.print());
+    closePreviewBtn.addEventListener("click", () => {
+      window.close();
+      window.setTimeout(() => {
+        if (!window.closed) window.history.back();
+      }, 120);
+    });
+
+    refreshIcons();
+  </script>
+</body>
+</html>

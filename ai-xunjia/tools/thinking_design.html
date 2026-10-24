@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>通宝思考状态设计</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 1600px;
+      height: 1000px;
+      margin: 0;
+      overflow: hidden;
+      background: #f4f7fb;
+      color: #17263b;
+      font-family: "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+    }
+
+    body {
+      padding: 46px 52px 40px;
+    }
+
+    .eyebrow {
+      color: #2b6cb0;
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 9px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 50px;
+      line-height: 1.14;
+      font-weight: 750;
+    }
+
+    .subtitle {
+      margin: 11px 0 0;
+      color: #5f7188;
+      font-size: 24px;
+      line-height: 1.45;
+    }
+
+    .panel {
+      margin-top: 27px;
+      padding: 28px 30px 30px;
+      background: #ffffff;
+      border: 1px solid #d8e2ef;
+      border-radius: 12px;
+      box-shadow: 0 12px 30px rgba(29, 55, 90, 0.07);
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 20px;
+      margin-bottom: 23px;
+    }
+
+    .panel-head strong {
+      font-size: 30px;
+      line-height: 1.2;
+    }
+
+    .panel-head span {
+      color: #708197;
+      font-size: 21px;
+      white-space: nowrap;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 26px;
+      position: relative;
+    }
+
+    .flow::before {
+      content: "";
+      position: absolute;
+      left: 9%;
+      right: 9%;
+      top: 34px;
+      height: 3px;
+      background: #bfd3e8;
+    }
+
+    .stage {
+      padding: 0 19px 19px;
+      border-radius: 9px;
+      background: #f8fafc;
+      border: 1px solid #e4eaf2;
+      position: relative;
+      z-index: 1;
+    }
+
+    .stage-index {
+      width: 68px;
+      height: 68px;
+      margin: -34px auto 15px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: #eaf3fc;
+      border: 3px solid #8db8df;
+      color: #225f97;
+      font-size: 25px;
+      font-weight: 750;
+    }
+
+    .stage:nth-child(2) .stage-index {
+      background: #e8f7ef;
+      border-color: #70b98f;
+      color: #266a47;
+    }
+
+    .stage:nth-child(3) .stage-index {
+      background: #f0effc;
+      border-color: #9a94d4;
+      color: #4c468f;
+    }
+
+    .stage:nth-child(4) .stage-index {
+      background: #fff7e8;
+      border-color: #d3a24e;
+      color: #805716;
+    }
+
+    .stage h2 {
+      margin: 0;
+      text-align: center;
+      font-size: 28px;
+      line-height: 1.3;
+    }
+
+    .stage-summary {
+      margin: 7px 0 18px;
+      text-align: center;
+      color: #65768a;
+      font-size: 20px;
+      line-height: 1.4;
+    }
+
+    .state-card {
+      min-height: 210px;
+      padding: 18px 18px 17px;
+      border-radius: 8px;
+      background: #fff;
+      border: 1px solid #e2e9f1;
+    }
+
+    .state-label {
+      color: #7d8da1;
+      font-size: 17px;
+      font-weight: 650;
+      margin-bottom: 8px;
+    }
+
+    .state-title {
+      font-size: 22px;
+      line-height: 1.38;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .state-copy {
+      color: #596b80;
+      font-size: 18px;
+      line-height: 1.5;
+    }
+
+    .progress {
+      height: 8px;
+      margin-top: 17px;
+      border-radius: 999px;
+      background: #e5ecf4;
+      overflow: hidden;
+    }
+
+    .progress > span {
+      display: block;
+      width: 45%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #2d71ad, #69a7d8);
+    }
+
+    .progress.thinking > span {
+      width: 82%;
+      background: linear-gradient(90deg, #379269, #79c595);
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 14px;
+    }
+
+    .chips span {
+      padding: 6px 9px;
+      border-radius: 5px;
+      background: #e8f3ec;
+      color: #35734f;
+      font-size: 16px;
+      line-height: 1.2;
+    }
+
+    .choices {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+      margin-top: 13px;
+    }
+
+    .choices span {
+      padding: 7px 6px;
+      border-radius: 5px;
+      background: #fff;
+      border: 1px solid #e4e9f0;
+      color: #5a697c;
+      font-size: 16px;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .outcomes {
+      display: grid;
+      gap: 8px;
+      margin-top: 13px;
+    }
+
+    .outcomes span {
+      padding: 7px 9px;
+      border-radius: 5px;
+      background: #f2f0fb;
+      color: #5a548f;
+      font-size: 16px;
+      line-height: 1.3;
+    }
+
+    .rules {
+      margin-top: 25px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 22px;
+    }
+
+    .rule {
+      padding: 19px 21px;
+      border-radius: 9px;
+      background: #fff;
+      border: 1px solid #d8e2ef;
+      min-height: 132px;
+    }
+
+    .rule strong {
+      display: block;
+      margin-bottom: 9px;
+      font-size: 23px;
+      line-height: 1.3;
+    }
+
+    .rule p {
+      margin: 0;
+      color: #5d6f84;
+      font-size: 19px;
+      line-height: 1.5;
+    }
+
+    .rule b {
+      color: #243852;
+    }
+
+    .footnote {
+      margin: 17px 0 0;
+      color: #76869a;
+      font-size: 18px;
+      line-height: 1.45;
+    }
+  </style>
+</head>
+<body>
+  <div class="eyebrow">AI 询价 · 通宝体验设计</div>
+  <h1>通宝思考状态设计</h1>
+  <p class="subtitle">把等待过程拆成“准备、思考、结果、确认”四段反馈，只展示用户可理解的进度。</p>
+
+  <section class="panel">
+    <div class="panel-head">
+      <strong>思考状态流转</strong>
+      <span>首次提交从准备阶段开始，后续查询直接进入思考阶段</span>
+    </div>
+
+    <div class="flow">
+      <article class="stage">
+        <div class="stage-index">01</div>
+        <h2>准备阶段</h2>
+        <p class="stage-summary">接收需求，建立首个反馈</p>
+        <div class="state-card">
+          <div class="state-label">过程卡片</div>
+          <div class="state-title">正在准备执行...</div>
+          <div class="state-copy">通宝正在接收询价需求并进入工作状态</div>
+          <div class="progress"><span></span></div>
+        </div>
+      </article>
+
+      <article class="stage">
+        <div class="stage-index">02</div>
+        <h2>思考阶段</h2>
+        <p class="stage-summary">按模式推进步骤与进度</p>
+        <div class="state-card">
+          <div class="state-label">快速思考 / 深度思考</div>
+          <div class="state-title">正在理解材料、规格与报价地区...</div>
+          <div class="chips">
+            <span>理解条件</span><span>匹配报价</span><span>核对记录</span>
+          </div>
+          <div class="progress thinking"><span></span></div>
+        </div>
+      </article>
+
+      <article class="stage">
+        <div class="stage-index">03</div>
+        <h2>结果承接</h2>
+        <p class="stage-summary">先承接询价结果或明确兜底</p>
+        <div class="state-card">
+          <div class="state-label">结果形态</div>
+          <div class="outcomes">
+            <span>询价建议结果</span>
+            <span>缺少关键规格</span>
+            <span>暂无法自动查询到可用数据</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="stage">
+        <div class="stage-index">04</div>
+        <h2>阶段确认</h2>
+        <p class="stage-summary">结果承接后再询问</p>
+        <div class="state-card">
+          <div class="state-label">对话卡片</div>
+          <div class="state-title">请选择本次询价所属项目阶段</div>
+          <div class="choices">
+            <span>施工图预算</span><span>投资估算</span>
+            <span>设计概算</span><span>工程竣工结算</span>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section class="rules">
+    <div class="rule">
+      <strong>快速思考</strong>
+      <p><b>3 个步骤</b>：理解条件 → 匹配历史询价与市场价 → 核对报价记录。</p>
+    </div>
+    <div class="rule">
+      <strong>深度思考</strong>
+      <p><b>5 个步骤</b>，额外核验市场价与报价口径，并复核地区差异与价格合理性。</p>
+    </div>
+    <div class="rule">
+      <strong>展示边界</strong>
+      <p>不展示思维链、Prompt、系数、检索 SQL 与内部检索明细；减少动态效果时仅保留文字进度。</p>
+    </div>
+  </section>
+
+  <p class="footnote">设计原则：先让用户知道“系统收到了”，再说明“正在做什么”，随后承接结果，最后确认项目阶段。</p>
+</body>
+</html>
